@@ -545,8 +545,10 @@ type State struct {
     op *OpNode
 
     // outputIndex is which output of the Op this state represents.
-    // Most ops have a single output (index 0), but FileOp can
-    // have multiple via chained actions.
+    // Most ops have a single output (index 0).
+    // File operations create separate FileOp nodes chained via State inputs,
+    // not multiple FileActions in a single FileOp. This provides fine-grained
+    // caching - only changed operations need re-execution.
     outputIndex int
 
     // platform, if set, overrides the default platform for this state.
@@ -608,7 +610,38 @@ function walk(node, visited, def):
 
 The final vertex in `def.def` is the terminal Op (the export target). BuildKit convention: the last entry in the `def` array is the output.
 
-### 5.4 Source Mapping
+### 5.4 FileOp Chaining and Caching Tradeoffs
+
+BuildKit's `FileOp` supports multiple `FileAction`s within a single Op, but this design choice has significant caching implications.
+
+**Single FileOp with multiple actions (NOT used):**
+- FileOp digest = hash of ALL actions combined
+- If ANY action changes, the entire FileOp digest changes
+- BuildKit must re-execute ALL actions, even unchanged ones
+- Pros: Fewer DAG nodes, potentially smaller protobuf
+- Cons: Poor incremental caching - changing one file re-runs everything
+
+**Separate FileOps per action (luakit approach):**
+- Each FileOp has its own digest based on its single action
+- Only changed FileOps need re-execution
+- Fine-grained caching maximizes cache hits
+- Cons: More DAG nodes
+
+```
+# Recommended: Separate FileOps for fine-grained caching
+SourceOp → FileOp[mkdir /foo] → FileOp[mkdir /bar] → FileOp[mkfile file]
+                      ↑                       ↑
+              cached independently      cached independently
+
+# NOT Recommended: Combined FileOp (poor incremental caching)
+SourceOp → FileOp[action1: mkdir /foo, action2: mkdir /bar, action3: mkfile]
+                                       ↑
+                          all re-run if ANY changes
+```
+
+luakit deliberately creates separate FileOp nodes for each file operation. This matches Dockerfile and Earthly behavior, where each instruction creates a new Op. The minor increase in DAG size is worth the significant caching benefits for iterative development.
+
+### 5.5 Source Mapping
 
 When a Lua API function is called, the Go side captures the Lua call site:
 
@@ -786,7 +819,7 @@ Located in `test/integration/golden/`. Each test case is a pair: a `.lua` input 
 | `exec_basic` | `image → run → export` | ExecOp with correct Meta, input edge from SourceOp |
 | `exec_mounts` | `run` with cache, secret, ssh, tmpfs | All mount types serialize correctly |
 | `file_copy` | Two images + `copy` between them | FileOp with FileActionCopy, correct secondaryInput |
-| `file_ops` | mkdir, mkfile, rm, symlink chain | All FileAction variants in a single FileOp |
+| `file_ops` | mkdir, mkfile, rm, symlink chain | FileAction variants serialize correctly; each creates separate FileOp chained via State |
 | `merge_basic` | Three parallel branches merged | MergeOp with 3 inputs, independent DAG branches |
 | `diff_basic` | diff(base, installed) | DiffOp with correct lower/upper |
 | `multi_stage` | Builder → runtime copy pattern | Two SourceOps, ExecOp, FileOp(copy), correct edges |

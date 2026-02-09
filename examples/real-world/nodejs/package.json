@@ -1,0 +1,16 @@
+{
+  "name": "nodejs-webapp",
+  "version": "1.0.0",
+  "description": "A Node.js web application",
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "echo 'Building application...' && mkdir -p dist && echo 'console.log(\"Hello from Node.js app!\");' > dist/index.js",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  },
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}
