@@ -69,6 +69,7 @@ run = "go test -v -race -coverprofile=coverage.out -covermode=atomic ./..."
 
 [tasks."test:integration"]
 description = "Run integration tests with BuildKit"
+depends = ["build"]
 run = '''
 #!/usr/bin/env bash
 set -e

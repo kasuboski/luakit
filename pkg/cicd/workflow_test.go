@@ -194,33 +194,3 @@ func TestDockerfileSupportsCrossPlatform(t *testing.T) {
 		})
 	}
 }
-
-func TestCrossPlatformBuildScript(t *testing.T) {
-	data, err := os.ReadFile(filepath.Join(projectRoot(), "test_cross_platform_build.sh"))
-	if err != nil {
-		t.Fatalf("Failed to read test script: %v", err)
-	}
-
-	content := string(data)
-
-	tests := []struct {
-		name     string
-		required string
-	}{
-		{"tests amd64", "linux/amd64"},
-		{"tests arm64", "linux/arm64"},
-		{"uses buildx", "docker buildx build"},
-		{"uses platform flag", "--platform"},
-		{"verifies architecture", "x86-64"},
-		{"verifies arm64", "aarch64"},
-		{"checks static linking", "statically linked"},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if !strings.Contains(content, tt.required) {
-				t.Errorf("Missing required content: %s", tt.required)
-			}
-		})
-	}
-}

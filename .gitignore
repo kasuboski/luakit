@@ -1,3 +1,5 @@
 .env
 .yoke
 coverage.out
+test/integration/golden_scripts/
+dist/*
