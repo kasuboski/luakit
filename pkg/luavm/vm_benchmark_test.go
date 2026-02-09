@@ -49,7 +49,7 @@ bk.export(result)
 func BenchmarkEval100LineScript(b *testing.B) {
 	var script string
 	script = "local base = bk.image(\"alpine:3.19\")\n"
-	for i := 0; i < 100; i++ {
+	for i := range 100 {
 		script += "local s" + string(rune('0'+i%10)) + " = base:run(\"echo test" + string(rune('0'+i%10)) + "\")\n"
 	}
 	script += "bk.export(s0)\n"

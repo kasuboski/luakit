@@ -212,13 +212,13 @@ Use appropriate network modes:
 
 ```lua
 -- Default: Limited network
-local result = base:run("make build", { network = "sandbox" })
+local result = base:run("mise run build", { network = "sandbox" })
 
 -- Only when needed: Full network
 local result = base:run("curl https://api.example.com", { network = "host" })
 
 -- Air-gapped: No network
-local result = base:run("make test", { network = "none" })
+local result = base:run("mise run test", { network = "none" })
 ```
 
 ### 6. Pin Versions

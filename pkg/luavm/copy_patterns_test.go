@@ -1,6 +1,7 @@
 package luavm
 
 import (
+	"strings"
 	"testing"
 )
 
@@ -327,13 +328,14 @@ func formatLuaArray(items []string) string {
 	if len(items) == 0 {
 		return "{}"
 	}
-	result := "{"
+	var result strings.Builder
+	result.WriteString("{")
 	for i, item := range items {
 		if i > 0 {
-			result += ", "
+			result.WriteString(", ")
 		}
-		result += `"` + item + `"`
+		result.WriteString(`"` + item + `"`)
 	}
-	result += "}"
-	return result
+	result.WriteString("}")
+	return result.String()
 }

@@ -21,8 +21,8 @@ The release process is automated via GitHub Actions. When you push a version tag
 
 ### Step 1: Prepare the release
 
-1. Ensure all tests pass: `make test`
-2. Verify the code compiles: `make build`
+1. Ensure all tests pass: `mise run test`
+2. Verify the code compiles: `mise run build`
 3. Update the version in `go.mod` if needed
 
 ### Step 2: Tag the release
@@ -97,13 +97,13 @@ Before creating a release, you can test the build locally:
 
 ```bash
 # Build all binaries
-make build-all
+mise run build-all
 
 # Generate checksums
-make checksums
+mise run checksums
 
 # Verify all binaries
-make verify-release
+mise run verify:release
 ```
 
 ## Versioning
@@ -121,8 +121,8 @@ luakit follows [Semantic Versioning 2.0.0](https://semver.org/):
 Check the workflow logs in the Actions tab. Common issues:
 
 - Missing dependencies: Ensure `go mod` is up to date
-- Test failures: Run `make test` locally to reproduce
-- Build errors: Verify `make build-all` succeeds locally
+- Test failures: Run `mise run test` locally to reproduce
+- Build errors: Verify `mise run build-all` succeeds locally
 
 ### Verification fails
 

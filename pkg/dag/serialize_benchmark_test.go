@@ -24,7 +24,7 @@ func BenchmarkDAGConstruction50Ops(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		base := ops.Image("alpine:3.19", "test.lua", 1, nil)
 		state := base
-		for j := 0; j < 50; j++ {
+		for j := range 50 {
 			state = ops.Run(state, []string{"/bin/sh", "-c", "echo test"}, nil, "test.lua", j+2)
 		}
 		_ = state
@@ -36,7 +36,7 @@ func BenchmarkDAGConstruction100Ops(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		base := ops.Image("alpine:3.19", "test.lua", 1, nil)
 		state := base
-		for j := 0; j < 100; j++ {
+		for j := range 100 {
 			state = ops.Run(state, []string{"/bin/sh", "-c", "echo test"}, nil, "test.lua", j+2)
 		}
 		_ = state
@@ -106,7 +106,7 @@ func BenchmarkSerializeSimpleDAG(b *testing.B) {
 func BenchmarkSerialize50OpsDAG(b *testing.B) {
 	base := ops.Image("alpine:3.19", "test.lua", 1, nil)
 	state := base
-	for j := 0; j < 50; j++ {
+	for j := range 50 {
 		state = ops.Run(state, []string{"/bin/sh", "-c", "echo test"}, nil, "test.lua", j+2)
 	}
 
@@ -123,7 +123,7 @@ func BenchmarkSerialize50OpsDAG(b *testing.B) {
 func BenchmarkSerialize100OpsDAG(b *testing.B) {
 	base := ops.Image("alpine:3.19", "test.lua", 1, nil)
 	state := base
-	for j := 0; j < 100; j++ {
+	for j := range 100 {
 		state = ops.Run(state, []string{"/bin/sh", "-c", "echo test"}, nil, "test.lua", j+2)
 	}
 
@@ -198,7 +198,7 @@ func BenchmarkDigestComputation(b *testing.B) {
 func BenchmarkWalkDAG(b *testing.B) {
 	base := ops.Image("alpine:3.19", "test.lua", 1, nil)
 	state := base
-	for j := 0; j < 50; j++ {
+	for j := range 50 {
 		state = ops.Run(state, []string{"/bin/sh", "-c", "echo test"}, nil, "test.lua", j+2)
 	}
 

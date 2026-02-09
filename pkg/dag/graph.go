@@ -13,13 +13,13 @@ var (
 )
 
 func initStatePools() {
-	statePool.New = func() interface{} {
+	statePool.New = func() any {
 		return &State{}
 	}
-	edgePool.New = func() interface{} {
+	edgePool.New = func() any {
 		return &Edge{}
 	}
-	opNodePool.New = func() interface{} {
+	opNodePool.New = func() any {
 		return &OpNode{
 			metadata: &pb.OpMetadata{},
 			inputs:   make([]*Edge, 0, 4),

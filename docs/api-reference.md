@@ -242,7 +242,7 @@ local result = base:run("make -j$(nproc)", {
 })
 
 -- Exit code range
-local result = base:run("make test", {
+local result = base:run("mise run test", {
     valid_exit_codes = "0..10"
 })
 ```
@@ -673,17 +673,17 @@ Create a tmpfs (in-memory filesystem) mount.
 
 ```lua
 -- Simple tmpfs
-local result = base:run("make test", {
+local result = base:run("mise run test", {
     mounts = { bk.tmpfs("/tmp") }
 })
 
 -- Sized tmpfs (1GB)
-local result = base:run("make test", {
+local result = base:run("mise run test", {
     mounts = { bk.tmpfs("/tmp", { size = 1073741824 }) }
 })
 
 -- Multiple tmpfs
-local result = base:run("make test", {
+local result = base:run("mise run test", {
     mounts = {
         bk.tmpfs("/tmp", { size = 1073741824 }),
         bk.tmpfs("/var/tmp", { size = 536870912 })

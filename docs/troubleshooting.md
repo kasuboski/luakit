@@ -506,7 +506,7 @@ local result = base:run("curl https://api.example.com", {
 })
 
 -- Or use no network for local builds
-local result = base:run("make test", {
+local result = base:run("mise run test", {
     network = "none"
 })
 ```

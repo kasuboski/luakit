@@ -351,7 +351,7 @@ local result = base:run("make", { network = "sandbox" })
 local result = base:run("curl https://api.example.com", { network = "host" })
 
 -- No network (isolated)
-local result = base:run("make test", { network = "none" })
+local result = base:run("mise run test", { network = "none" })
 ```
 
 **When to use:**

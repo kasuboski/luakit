@@ -100,7 +100,7 @@ local result2 = base:run({"sh", "-c", "echo hello > /greeting.txt"})
 RUN --mount=type=cache,target=/root/.cache/pip \
     pip install -r requirements.txt
 RUN --network=none \
-    make test
+    mise run test
 ```
 
 **Luakit:**
@@ -110,7 +110,7 @@ local result1 = base:run("pip install -r requirements.txt", {
     mounts = { bk.cache("/root/.cache/pip") }
 })
 
-local result2 = base:run("make test", {
+local result2 = base:run("mise run test", {
     network = "none"
 })
 ```
