@@ -296,7 +296,7 @@ func createTestScriptForGolden(t *testing.T, script, scriptName string) string {
 	return scriptPath
 }
 
-func createLuaVMAndRun(t *testing.T, script string) (*dag.State, interface{}) {
+func createLuaVMAndRun(t *testing.T, script string) (*dag.State, any) {
 	t.Helper()
 
 	scriptPath := createTestScript(t, script)

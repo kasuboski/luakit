@@ -41,7 +41,7 @@ type BindOptions struct {
 	Readonly bool
 }
 
-func applyFileOpt(opt interface{}, uid, gid, mode uint32, optional bool) {
+func applyFileOpt(opt any, uid, gid, mode uint32, optional bool) {
 	switch o := opt.(type) {
 	case *pb.SecretOpt:
 		if uid != 0 {
