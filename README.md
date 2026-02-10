@@ -118,6 +118,22 @@ The gateway mode reads `build.lua` from the build context and returns the LLB De
 - [Migration Guide](docs/migration.md) - Converting from Dockerfile
 - [Release Process](docs/RELEASE.md) - Creating and publishing releases
 
+## Editor Support
+
+Luakit provides type definitions for Lua editors using LuaLS (Lua Language Server). This enables autocomplete, type checking, hover documentation, and go-to-definition.
+
+### VSCode
+
+Install the [Lua Language Server](https://marketplace.visualstudio.com/items?itemName=sumneko.lua) extension. The extension will automatically discover the type definitions in the `types/` directory.
+
+### Neovim
+
+Ensure `lua-language-server` is installed and configured with nvim-lspconfig. The type definitions will be automatically detected.
+
+### Other Editors
+
+Any editor supporting LuaLS will automatically detect the type definitions in the `types/` directory. The `.luarc.json` file at the project root configures the language server to use these definitions.
+
 ## Example: Go Multi-Stage Build
 
 ```lua

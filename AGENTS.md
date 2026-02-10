@@ -11,3 +11,8 @@ We are implementing the plan in @SPEC.md
 * Use `go test` to run tests.
 * Use `go vet` to check for potential issues.
 * Use `go fmt` to format code.
+
+## Type Definitions
+* Lua editor type definitions are in `types/` directory
+* When adding/modifying API in `pkg/luavm/api.go` or `pkg/luavm/state.go`, update corresponding `.d.lua` files
+* Type definitions use LuaLS/LuaCATS annotations for VSCode, Neovim, and other Lua editors

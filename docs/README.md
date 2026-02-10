@@ -152,3 +152,20 @@ bk.export(final, {
 - [Examples](../examples/) - Example build scripts
 - [Specification](../SPEC.md) - Detailed technical specification
 - [GitHub Issues](https://github.com/kasuboski/luakit/issues) - Bug reports and feature requests
+
+## Editor Support
+
+Luakit provides type definitions for Lua editors using LuaLS (Lua Language Server). Type definitions are located in the `types/` directory and provide:
+
+- Autocomplete for `bk` global and `state` methods
+- Type checking for function parameters
+- Hover documentation for all API functions
+- Go-to-definition across the codebase
+
+### Setup
+
+**VSCode**: Install the [Lua Language Server](https://marketplace.visualstudio.com/items?itemName=sumneko.lua) extension. Type definitions are automatically detected from the `types/` directory.
+
+**Neovim**: Configure `lua-language-server` with nvim-lspconfig. The type definitions will be automatically discovered.
+
+The `.luarc.json` file at the project root configures LuaLS to use the type definitions in `types/`.

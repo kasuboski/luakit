@@ -1,0 +1,16 @@
+{
+  "$schema": "https://raw.githubusercontent.com/LuaLS/vscode-lua/master/setting/schema.json",
+  "workspace.library": [
+    "./types",
+    "./lua/stdlib"
+  ],
+  "diagnostics": {
+    "globals": ["bk", "require"],
+    "disable": [
+      "missing-global-doc"
+    ]
+  },
+  "runtime": {
+    "version": "LuaJIT"
+  }
+}
