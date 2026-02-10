@@ -181,7 +181,9 @@ func TestWithMetadata(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -239,7 +241,9 @@ func TestWithMetadataOnlyDescription(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -280,7 +284,9 @@ func TestWithMetadataOnlyProgressGroup(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -323,7 +329,9 @@ func TestWithMetadataNilOpts(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -350,7 +358,9 @@ func TestWithMetadataInvalidType(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")

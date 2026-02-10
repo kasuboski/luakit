@@ -11,7 +11,9 @@ func TestGitSerialization(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local repo = bk.git("https://github.com/moby/buildkit.git", {
@@ -76,7 +78,9 @@ func TestGitWithoutRefSerialization(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local repo = bk.git("https://github.com/moby/buildkit.git")
@@ -112,7 +116,9 @@ func TestGitMultiStageWithGitSource(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local repo = bk.git("https://github.com/moby/buildkit.git", {

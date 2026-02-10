@@ -13,25 +13,22 @@ import (
 func createTestState(t *testing.T) *dag.State {
 	t.Helper()
 
-	L := luavm.NewVM(nil)
-	defer L.Close()
-
 	script := `
 local base = bk.image("alpine:3.19")
 local result = base:run("echo hello")
 bk.export(result)
 `
 
-	if err := L.DoString(script); err != nil {
+	result, err := luavm.Evaluate(strings.NewReader(script), "test.lua", nil)
+	if err != nil {
 		t.Fatalf("failed to run test script: %v", err)
 	}
 
-	state := luavm.GetExportedState()
-	if state == nil {
+	if result.State == nil {
 		t.Fatal("no exported state")
 	}
 
-	return state
+	return result.State
 }
 
 func TestDOTWriter(t *testing.T) {
@@ -82,7 +79,6 @@ func TestJSONWriter(t *testing.T) {
 	})
 
 	t.Run("write to file", func(t *testing.T) {
-		luavm.ResetExportedState()
 		state := createTestState(t)
 		tmpDir := t.TempDir()
 		outputFile := filepath.Join(tmpDir, "test.json")
@@ -116,7 +112,6 @@ func TestJSONWriter(t *testing.T) {
 
 func TestProtobufWriter(t *testing.T) {
 	t.Run("write to stdout", func(t *testing.T) {
-		luavm.ResetExportedState()
 		exportedState := createTestState(t)
 
 		if exportedState == nil {
@@ -131,7 +126,6 @@ func TestProtobufWriter(t *testing.T) {
 	})
 
 	t.Run("write to file", func(t *testing.T) {
-		luavm.ResetExportedState()
 		exportedState := createTestState(t)
 
 		if exportedState == nil {
@@ -154,7 +148,6 @@ func TestProtobufWriter(t *testing.T) {
 }
 
 func TestDOTWriterWithFilter(t *testing.T) {
-	luavm.ResetExportedState()
 	state := createTestState(t)
 
 	t.Run("filter Exec", func(t *testing.T) {
@@ -213,7 +206,6 @@ func TestDOTWriterWithFilter(t *testing.T) {
 }
 
 func TestJSONWriterWithFilter(t *testing.T) {
-	luavm.ResetExportedState()
 	state := createTestState(t)
 
 	t.Run("filter Exec", func(t *testing.T) {

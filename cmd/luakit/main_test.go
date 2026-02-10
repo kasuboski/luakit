@@ -196,7 +196,6 @@ func TestParseDagFlags(t *testing.T) {
 }
 
 func TestDOTWriter(t *testing.T) {
-	luavm.ResetExportedState()
 	state := createTestState(t)
 
 	writer := output.NewDOTWriter("")
@@ -227,7 +226,6 @@ func TestDOTWriter(t *testing.T) {
 }
 
 func TestJSONWriter(t *testing.T) {
-	luavm.ResetExportedState()
 	state := createTestState(t)
 
 	writer := output.NewJSONWriter("")
@@ -263,20 +261,18 @@ func TestJSONWriter(t *testing.T) {
 func createTestState(t *testing.T) *dag.State {
 	t.Helper()
 
-	L := luavm.NewVM(nil)
-	defer L.Close()
-
 	script := `
 local base = bk.image("alpine:3.19")
 local result = base:run("echo hello")
 bk.export(result)
 `
 
-	if err := L.DoString(script); err != nil {
+	result, err := luavm.Evaluate(strings.NewReader(script), "test.lua", nil)
+	if err != nil {
 		t.Fatalf("failed to run test script: %v", err)
 	}
 
-	state := luavm.GetExportedState()
+	state := result.State
 	if state == nil {
 		t.Fatal("no exported state")
 	}
@@ -327,7 +323,6 @@ func TestGetScriptArg(t *testing.T) {
 }
 
 func TestOutputWriterToFile(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 
 	state := createTestState(t)

@@ -14,10 +14,11 @@ import (
 	"github.com/kasuboski/luakit/pkg/ops"
 )
 
-var (
+type vmData struct {
+	L                   *lua.LState
 	exportedState       *dag.State
 	exportedImageConfig *dockerspec.DockerOCIImage
-)
+}
 
 func registerAPI(L *lua.LState) {
 	bk := L.NewTable()
@@ -223,7 +224,8 @@ func bkHTTPS(L *lua.LState) int {
 func bkExport(L *lua.LState) int {
 	state := checkState(L, 1)
 
-	if exportedState != nil {
+	data := getVMData(L)
+	if data.exportedState != nil {
 		L.RaiseError("bk.export: already called once")
 		return 0
 	}
@@ -233,16 +235,28 @@ func bkExport(L *lua.LState) int {
 		exportOpts = L.CheckTable(2)
 	}
 
-	exportedState = state
+	data.exportedState = state
 
 	if exportOpts != nil {
 		imageConfig := parseExportOptions(L, exportOpts)
 		if imageConfig != nil {
-			exportedImageConfig = imageConfig
+			data.exportedImageConfig = imageConfig
 		}
 	}
 
 	return 0
+}
+
+func getVMData(L *lua.LState) *vmData {
+	vmDataVal := L.GetGlobal("__luakit_vm_data")
+	if vmDataVal == nil || vmDataVal == lua.LNil {
+		return nil
+	}
+	ud, ok := vmDataVal.(*lua.LUserData)
+	if !ok {
+		return nil
+	}
+	return ud.Value.(*vmData)
 }
 
 func parseExportOptions(L *lua.LState, opts *lua.LTable) *dockerspec.DockerOCIImage {
@@ -314,10 +328,6 @@ func parseLabelsTable(L *lua.LState, table *lua.LTable) map[string]string {
 		labels[keyStr] = valueStr
 	})
 	return labels
-}
-
-func GetExportedImageConfig() *dockerspec.DockerOCIImage {
-	return exportedImageConfig
 }
 
 func parsePlatform(L *lua.LState, opts *lua.LTable) *pb.Platform {

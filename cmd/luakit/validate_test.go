@@ -4,12 +4,9 @@ import (
 	"os"
 	"strings"
 	"testing"
-
-	"github.com/kasuboski/luakit/pkg/luavm"
 )
 
 func TestValidateValidScript(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 	scriptPath := tmpDir + "/valid.lua"
 
@@ -32,7 +29,6 @@ bk.export(result)
 }
 
 func TestValidateMissingExport(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 	scriptPath := tmpDir + "/no_export.lua"
 
@@ -58,7 +54,6 @@ local result = base:run("echo hello")
 }
 
 func TestValidateSyntaxError(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 	scriptPath := tmpDir + "/syntax.lua"
 
@@ -82,7 +77,6 @@ bk.export(result)
 }
 
 func TestValidateInvalidAPIArgs(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 	scriptPath := tmpDir + "/invalid_args.lua"
 
@@ -109,7 +103,6 @@ bk.export(result)
 }
 
 func TestValidateMergeOperation(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 	scriptPath := tmpDir + "/merge.lua"
 
@@ -135,7 +128,6 @@ bk.export(merged)
 }
 
 func TestValidateDiffOperation(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 	scriptPath := tmpDir + "/diff.lua"
 
@@ -162,7 +154,6 @@ bk.export(with_git)
 }
 
 func TestValidateFileOperations(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 	scriptPath := tmpDir + "/file_ops.lua"
 
@@ -188,7 +179,6 @@ bk.export(result)
 }
 
 func TestValidateWithMounts(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 	scriptPath := tmpDir + "/mounts.lua"
 
@@ -217,7 +207,6 @@ bk.export(result)
 }
 
 func TestValidateComplexMultiStage(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 	scriptPath := tmpDir + "/multi_stage.lua"
 
@@ -253,7 +242,6 @@ bk.export(final, { entrypoint = {"/server"} })
 }
 
 func TestValidateScriptNotFound(t *testing.T) {
-	luavm.ResetExportedState()
 	oldArgs := os.Args
 	defer func() { os.Args = oldArgs }()
 	os.Args = []string{"luakit", "validate", "/nonexistent/script.lua"}
@@ -268,7 +256,6 @@ func TestValidateScriptNotFound(t *testing.T) {
 }
 
 func TestValidateNoScriptArg(t *testing.T) {
-	luavm.ResetExportedState()
 	oldArgs := os.Args
 	defer func() { os.Args = oldArgs }()
 	os.Args = []string{"luakit", "validate"}
@@ -283,7 +270,6 @@ func TestValidateNoScriptArg(t *testing.T) {
 }
 
 func TestValidateWithImageConfig(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 	scriptPath := tmpDir + "/image_config.lua"
 
@@ -315,7 +301,6 @@ bk.export(result, {
 }
 
 func TestValidateInvalidMergeArgs(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 	scriptPath := tmpDir + "/invalid_merge.lua"
 
@@ -339,7 +324,6 @@ bk.export(merged)
 }
 
 func TestValidateInvalidDiffArgs(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 	scriptPath := tmpDir + "/invalid_diff.lua"
 
@@ -363,7 +347,6 @@ bk.export(diff)
 }
 
 func TestValidateAllOperationTypes(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 	scriptPath := tmpDir + "/all_ops.lua"
 
@@ -400,7 +383,6 @@ bk.export(final)
 }
 
 func TestValidateSerializationErrors(t *testing.T) {
-	luavm.ResetExportedState()
 	tmpDir := t.TempDir()
 	scriptPath := tmpDir + "/serialize_test.lua"
 

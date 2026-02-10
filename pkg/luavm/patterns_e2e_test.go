@@ -8,7 +8,9 @@ func TestCopyWithPatternsEndToEnd(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local src = bk.image("alpine:3.19")
@@ -86,7 +88,9 @@ func TestLocalWithPatternsEndToEnd(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local ctx = bk.local_("context", {
@@ -142,7 +146,9 @@ func TestComplexPatternCombination(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local src = bk.local_("sources", {
@@ -216,7 +222,9 @@ func TestPatternNegation(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local src = bk.image("alpine:3.19")

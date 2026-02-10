@@ -11,7 +11,9 @@ func TestNetworkSecurityOptionsSerialization(t *testing.T) {
 	resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -70,7 +72,9 @@ func TestNetworkModes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			resetExportedState()
 			L := NewVM(nil)
+			testVM = L
 			t.Cleanup(func() { L.Close() })
+			t.Cleanup(func() { testVM = nil })
 
 			script := `local base = bk.image("alpine:3.19"); local result = base:run("echo test", { network = "` + tt.network + `" }); bk.export(result)`
 
@@ -105,7 +109,9 @@ func TestSecurityModes(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			resetExportedState()
 			L := NewVM(nil)
+			testVM = L
 			t.Cleanup(func() { L.Close() })
+			t.Cleanup(func() { testVM = nil })
 
 			script := `local base = bk.image("alpine:3.19"); local result = base:run("echo test", { security = "` + tt.security + `" }); bk.export(result)`
 
@@ -127,7 +133,9 @@ func TestHostnameOption(t *testing.T) {
 	resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -157,7 +165,9 @@ func TestValidExitCodesOption(t *testing.T) {
 	resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -195,7 +205,9 @@ func TestAllExecOptionsTogether(t *testing.T) {
 	resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -258,7 +270,9 @@ func TestSingleExitCode(t *testing.T) {
 	resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -292,7 +306,9 @@ func TestExitCodeRange(t *testing.T) {
 	resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -329,7 +345,9 @@ func TestExitCodeRangeLarge(t *testing.T) {
 	resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -380,8 +398,11 @@ func TestExitCodeRangeInvalid(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
+			resetExportedState()
 			L := NewVM(nil)
+			testVM = L
 			t.Cleanup(func() { L.Close() })
+			t.Cleanup(func() { testVM = nil })
 
 			script := fmt.Sprintf(`
 				local base = bk.image("alpine:3.19")

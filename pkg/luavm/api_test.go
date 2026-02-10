@@ -7,11 +7,42 @@ import (
 	"github.com/kasuboski/luakit/pkg/dag"
 	"github.com/kasuboski/luakit/pkg/ops"
 	pb "github.com/moby/buildkit/solver/pb"
+	dockerspec "github.com/moby/docker-image-spec/specs-go/v1"
 	lua "github.com/yuin/gopher-lua"
 )
 
+var testVM *lua.LState
+
 func resetExportedState() {
-	exportedState = nil
+	if testVM != nil {
+		data := getVMData(testVM)
+		if data != nil {
+			data.exportedState = nil
+			data.exportedImageConfig = nil
+		}
+	}
+}
+
+func GetExportedState() *dag.State {
+	if testVM == nil {
+		return nil
+	}
+	data := getVMData(testVM)
+	if data == nil {
+		return nil
+	}
+	return data.exportedState
+}
+
+func GetExportedImageConfig() *dockerspec.DockerOCIImage {
+	if testVM == nil {
+		return nil
+	}
+	data := getVMData(testVM)
+	if data == nil {
+		return nil
+	}
+	return data.exportedImageConfig
 }
 
 func TestBasicLuaScript(t *testing.T) {
@@ -19,7 +50,9 @@ func TestBasicLuaScript(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -144,7 +177,9 @@ func TestMultipleSourceOps(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local img1 = bk.image("alpine:3.19")
@@ -194,7 +229,9 @@ func TestStateRunWithStringCommand(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -238,7 +275,9 @@ func TestStateRunWithArrayCommand(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -282,7 +321,9 @@ func TestStateRunWithEnv(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -326,7 +367,9 @@ func TestStateRunWithCwd(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -351,7 +394,9 @@ func TestStateRunWithUser(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -376,7 +421,9 @@ func TestStateRunWithAllOptions(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -475,7 +522,8 @@ func TestStateRunWithNetworkAndSecurityOptions(t *testing.T) {
 			resetExportedState()
 			t.Cleanup(resetExportedState)
 			L2 := NewVM(nil)
-			t.Cleanup(func() { L2.Close() })
+			testVM = L2
+			t.Cleanup(func() { L2.Close(); testVM = nil })
 
 			if err := L2.DoString(tc.script); err != nil {
 				t.Fatalf("Failed to execute Lua script: %v", err)
@@ -736,7 +784,9 @@ func TestStateRunWithMounts(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -784,7 +834,9 @@ func TestBkMerge(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s1 = bk.image("alpine:3.19")
@@ -822,7 +874,9 @@ func TestBkMergeWithTwoStates(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s1 = bk.scratch()
@@ -883,7 +937,9 @@ func TestBkDiff(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local lower = bk.image("alpine:3.19")
@@ -1191,7 +1247,9 @@ func TestBkHTTPInBuild(t *testing.T) {
 	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local file = bk.http("https://example.com/archive.tar.gz", {

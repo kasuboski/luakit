@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/kasuboski/luakit/pkg/dag"
 	"github.com/kasuboski/luakit/pkg/luavm"
@@ -11,7 +12,6 @@ import (
 	gwclient "github.com/moby/buildkit/frontend/gateway/client"
 	"github.com/moby/buildkit/solver/pb"
 	"github.com/moby/buildkit/util/apicaps"
-	dockerspec "github.com/moby/docker-image-spec/specs-go/v1"
 	"github.com/pkg/errors"
 )
 
@@ -54,18 +54,18 @@ func Build(ctx context.Context, c gwclient.Client, opts ...BuildOpt) (*gwclient.
 		return nil, errors.Errorf("no lua source code provided")
 	}
 
-	state, imageConfig, err := evaluateLua(luaSource, buildOpts.Opts)
+	result, err := evaluateLua(luaSource, buildOpts.Opts)
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to evaluate lua script")
 	}
 
-	if state == nil {
+	if result.State == nil {
 		return nil, errors.Errorf("no bk.export() call — nothing to build")
 	}
 
-	def, err := dag.Serialize(state, &dag.SerializeOptions{
-		ImageConfig: imageConfig,
-		SourceFiles: luavm.GetAllSourceFiles(),
+	def, err := dag.Serialize(result.State, &dag.SerializeOptions{
+		ImageConfig: result.ImageConfig,
+		SourceFiles: result.SourceFiles,
 	})
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to serialize definition")
@@ -147,37 +147,21 @@ func getAvailableInputNames(inputs map[string]llb.State) []string {
 	return names
 }
 
-func evaluateLua(source []byte, frontendOpts map[string]string) (state *dag.State, imageConfig *dockerspec.DockerOCIImage, err error) {
-	luavm.ResetExportedState()
-	luavm.ResetSourceFiles()
-
-	luavm.RegisterSourceFile("build.lua", source)
-
-	L := luavm.NewVM(nil)
-	defer func() {
-		r := recover()
-		if r != nil {
-			err = fmt.Errorf("lua evaluation panic: %v", r)
-		}
-		L.Close()
-	}()
-
+func evaluateLua(source []byte, frontendOpts map[string]string) (*luavm.EvalResult, error) {
 	for k, v := range frontendOpts {
 		os.Setenv(k, v)
 	}
 
-	if err := L.DoString(string(source)); err != nil {
-		return nil, nil, err
+	result, err := luavm.Evaluate(strings.NewReader(string(source)), "build.lua", nil)
+	if err != nil {
+		return nil, err
 	}
 
-	state = luavm.GetExportedState()
-	if state == nil {
-		return nil, nil, fmt.Errorf("no bk.export() call")
+	if result.State == nil {
+		return nil, fmt.Errorf("no bk.export() call")
 	}
 
-	imageConfig = luavm.GetExportedImageConfig()
-
-	return state, imageConfig, nil
+	return result, nil
 }
 
 func validateCaps(caps apicaps.CapSet) error {

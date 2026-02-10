@@ -86,7 +86,9 @@ func TestBkImageWithTablePlatform(t *testing.T) {
 func TestStateRunWithComplexEnv(t *testing.T) {
 	defer resetExportedState()
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s = bk.image("alpine:3.19")
@@ -120,7 +122,9 @@ func TestStateRunWithComplexEnv(t *testing.T) {
 func TestStateRunWithSpecialCharsInCwd(t *testing.T) {
 	defer resetExportedState()
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s = bk.image("alpine:3.19")
@@ -141,7 +145,9 @@ func TestStateRunWithSpecialCharsInCwd(t *testing.T) {
 func TestStateRunWithNumericUser(t *testing.T) {
 	defer resetExportedState()
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s = bk.image("alpine:3.19")
@@ -162,7 +168,9 @@ func TestStateRunWithNumericUser(t *testing.T) {
 func TestStateRunWithMultipleMounts(t *testing.T) {
 	defer resetExportedState()
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s = bk.image("alpine:3.19")
@@ -199,7 +207,9 @@ func TestStateRunWithMultipleMounts(t *testing.T) {
 func TestStateRunWithNestedTableEnv(t *testing.T) {
 	defer resetExportedState()
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s = bk.image("alpine:3.19")
@@ -223,7 +233,9 @@ func TestStateRunWithNestedTableEnv(t *testing.T) {
 func TestStateCopyWithSpecialPaths(t *testing.T) {
 	defer resetExportedState()
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local src = bk.image("alpine:3.19")
@@ -254,7 +266,9 @@ func TestStateCopyWithSpecialPaths(t *testing.T) {
 func TestStateMkdirWithSpecialPaths(t *testing.T) {
 	defer resetExportedState()
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s = bk.image("alpine:3.19")
@@ -276,7 +290,9 @@ func TestStateMkdirWithSpecialPaths(t *testing.T) {
 func TestStateMkfileWithSpecialChars(t *testing.T) {
 	defer resetExportedState()
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s = bk.image("alpine:3.19")
@@ -299,7 +315,9 @@ func TestStateMkfileWithSpecialChars(t *testing.T) {
 func TestStateSymlinkWithSpecialPaths(t *testing.T) {
 	defer resetExportedState()
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s = bk.image("alpine:3.19")
@@ -324,7 +342,9 @@ func TestStateSymlinkWithSpecialPaths(t *testing.T) {
 func TestBkMergeWithManyStates(t *testing.T) {
 	defer resetExportedState()
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s1 = bk.image("alpine:3.19")
@@ -350,7 +370,9 @@ func TestBkMergeWithManyStates(t *testing.T) {
 func TestBkDiffComplex(t *testing.T) {
 	defer resetExportedState()
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -488,7 +510,9 @@ func TestBkMountBindWithOptions(t *testing.T) {
 func TestBkExportWithComplexConfig(t *testing.T) {
 	defer resetExportedState()
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s = bk.image("alpine:3.19")
@@ -533,7 +557,9 @@ func TestBkExportWithComplexConfig(t *testing.T) {
 func TestComplexPipelineWithMounts(t *testing.T) {
 	defer resetExportedState()
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local builder = bk.image("golang:1.22")

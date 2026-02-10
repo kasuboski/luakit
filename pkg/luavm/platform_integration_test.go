@@ -9,7 +9,9 @@ import (
 
 func TestPlatformAPIIntegration(t *testing.T) {
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	t.Run("comprehensive platform test", func(t *testing.T) {
 		resetExportedState()
@@ -114,7 +116,9 @@ func TestPlatformAPIIntegration(t *testing.T) {
 
 func TestPlatformEdgeCases(t *testing.T) {
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	t.Run("platform with os and arch", func(t *testing.T) {
 		if err := L.DoString(`p = bk.platform("linux", "arm64")`); err != nil {

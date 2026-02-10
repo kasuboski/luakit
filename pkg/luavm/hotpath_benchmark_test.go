@@ -19,7 +19,7 @@ func BenchmarkEvalHotPath100LineScript(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		ResetSourceFiles()
-		ResetExportedState()
+		resetExportedState()
 
 		if err := L.DoString(script); err != nil {
 			b.Fatal(err)
@@ -47,7 +47,7 @@ bk.export(result)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		ResetSourceFiles()
-		ResetExportedState()
+		resetExportedState()
 
 		if err := L.DoString(script); err != nil {
 			b.Fatal(err)
@@ -70,7 +70,7 @@ func BenchmarkImageCallOnly(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		ResetSourceFiles()
-		ResetExportedState()
+		resetExportedState()
 
 		if err := L.DoString(`local base = bk.image("alpine:3.19")`); err != nil {
 			b.Fatal(err)
@@ -87,7 +87,7 @@ func BenchmarkRunCallOnly(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		ResetSourceFiles()
-		ResetExportedState()
+		resetExportedState()
 
 		if err := L.DoString(`local base = bk.image("alpine:3.19"); local result = base:run("echo test")`); err != nil {
 			b.Fatal(err)

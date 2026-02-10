@@ -34,7 +34,7 @@ bk.export(result)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		ResetSourceFiles()
-		ResetExportedState()
+		resetExportedState()
 
 		config := &VMConfig{}
 		L := NewVM(config)
@@ -57,7 +57,7 @@ func BenchmarkEval100LineScript(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		ResetSourceFiles()
-		ResetExportedState()
+		resetExportedState()
 
 		config := &VMConfig{}
 		L := NewVM(config)
@@ -83,7 +83,7 @@ bk.export(result)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		ResetSourceFiles()
-		ResetExportedState()
+		resetExportedState()
 
 		config := &VMConfig{}
 		L := NewVM(config)
@@ -111,7 +111,7 @@ bk.export(final)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		ResetSourceFiles()
-		ResetExportedState()
+		resetExportedState()
 
 		config := &VMConfig{}
 		L := NewVM(config)
@@ -135,7 +135,7 @@ bk.export(merged)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		ResetSourceFiles()
-		ResetExportedState()
+		resetExportedState()
 
 		config := &VMConfig{}
 		L := NewVM(config)
@@ -156,7 +156,7 @@ func BenchmarkCreateState(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		ResetSourceFiles()
-		ResetExportedState()
+		resetExportedState()
 
 		if err := L.DoString(`local base = bk.image("alpine:3.19")`); err != nil {
 			b.Fatal(err)
@@ -173,7 +173,7 @@ func BenchmarkRunOperation(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		ResetSourceFiles()
-		ResetExportedState()
+		resetExportedState()
 
 		if err := L.DoString(`local base = bk.image("alpine:3.19"); local result = base:run("echo test")`); err != nil {
 			b.Fatal(err)
@@ -190,7 +190,7 @@ func BenchmarkCopyOperation(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		ResetSourceFiles()
-		ResetExportedState()
+		resetExportedState()
 
 		script := `local base = bk.image("alpine:3.19"); local src = bk.local_("context"); local result = base:copy(src, ".", "/app")`
 		if err := L.DoString(script); err != nil {
@@ -212,7 +212,7 @@ bk.export(s4)
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		ResetSourceFiles()
-		ResetExportedState()
+		resetExportedState()
 
 		config := &VMConfig{}
 		L := NewVM(config)

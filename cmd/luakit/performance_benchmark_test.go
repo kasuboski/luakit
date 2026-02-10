@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"os"
+	"strings"
 	"testing"
 
 	"github.com/kasuboski/luakit/pkg/dag"
@@ -30,26 +31,15 @@ bk.export(result)`
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		luavm.ResetSourceFiles()
-		luavm.ResetExportedState()
 		dag.ClearDigestCache()
 
-		scriptData, err := os.ReadFile(tmpFile.Name())
+		config := &luavm.VMConfig{}
+		result, err := luavm.EvaluateFile(tmpFile.Name(), config)
 		if err != nil {
 			b.Fatal(err)
 		}
 
-		luavm.RegisterSourceFile(tmpFile.Name(), scriptData)
-
-		config := &luavm.VMConfig{}
-		L := luavm.NewVM(config)
-		defer L.Close()
-
-		if err = L.DoFile(tmpFile.Name()); err != nil {
-			b.Fatal(err)
-		}
-
-		state := luavm.GetExportedState()
+		state := result.State
 		if state == nil {
 			b.Fatal("no exported state")
 		}
@@ -89,26 +79,15 @@ func BenchmarkOptimizedCLIColdStart100Line(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		luavm.ResetSourceFiles()
-		luavm.ResetExportedState()
 		dag.ClearDigestCache()
 
-		scriptData, err := os.ReadFile(tmpFile.Name())
+		config := &luavm.VMConfig{}
+		result, err := luavm.EvaluateFile(tmpFile.Name(), config)
 		if err != nil {
 			b.Fatal(err)
 		}
 
-		luavm.RegisterSourceFile(tmpFile.Name(), scriptData)
-
-		config := &luavm.VMConfig{}
-		L := luavm.NewVM(config)
-		defer L.Close()
-
-		if err = L.DoFile(tmpFile.Name()); err != nil {
-			b.Fatal(err)
-		}
-
-		state := luavm.GetExportedState()
+		state := result.State
 		if state == nil {
 			b.Fatal("no exported state")
 		}
@@ -147,23 +126,17 @@ bk.export(result)`
 	for i := 0; i < b.N; i++ {
 		b.StopTimer()
 
-		luavm.ResetSourceFiles()
-		luavm.ResetExportedState()
 		dag.ClearDigestCache()
-
-		scriptData, _ := os.ReadFile(tmpFile.Name())
-		luavm.RegisterSourceFile(tmpFile.Name(), scriptData)
 
 		b.StartTimer()
 
 		config := &luavm.VMConfig{}
-		L := luavm.NewVM(config)
-
-		if err = L.DoFile(tmpFile.Name()); err != nil {
+		result, err := luavm.EvaluateFile(tmpFile.Name(), config)
+		if err != nil {
 			b.Fatal(err)
 		}
 
-		state := luavm.GetExportedState()
+		state := result.State
 		if state == nil {
 			b.Fatal("no exported state")
 		}
@@ -177,7 +150,6 @@ bk.export(result)`
 		output := buf.Bytes()
 		_ = output
 
-		L.Close()
 		b.StopTimer()
 	}
 }
@@ -190,18 +162,13 @@ bk.export(result)`
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		luavm.ResetSourceFiles()
-		luavm.ResetExportedState()
-
 		config := &luavm.VMConfig{}
-		L := luavm.NewVM(config)
-		defer L.Close()
-
-		if err := L.DoString(script); err != nil {
+		result, err := luavm.Evaluate(strings.NewReader(script), "benchmark.lua", config)
+		if err != nil {
 			b.Fatal(err)
 		}
 
-		state := luavm.GetExportedState()
+		state := result.State
 		if state == nil {
 			b.Fatal("no exported state")
 		}
@@ -213,21 +180,16 @@ func BenchmarkOptimizedSerializeOnly(b *testing.B) {
 local result = base:run("echo hello")
 bk.export(result)`
 
-	luavm.ResetSourceFiles()
-	luavm.ResetExportedState()
-
 	config := &luavm.VMConfig{}
-	L := luavm.NewVM(config)
-
-	if err := L.DoString(script); err != nil {
+	result, err := luavm.Evaluate(strings.NewReader(script), "benchmark.lua", config)
+	if err != nil {
 		b.Fatal(err)
 	}
 
-	state := luavm.GetExportedState()
+	state := result.State
 	if state == nil {
 		b.Fatal("no exported state")
 	}
-	L.Close()
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -247,18 +209,14 @@ bk.export(result)`
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		luavm.ResetSourceFiles()
-		luavm.ResetExportedState()
-
 		config := &luavm.VMConfig{}
-		L := luavm.NewVM(config)
-		if err := L.DoString(script); err != nil {
+		result, err := luavm.Evaluate(strings.NewReader(script), "benchmark.lua", config)
+		if err != nil {
 			b.Fatal(err)
 		}
-		state := luavm.GetExportedState()
+		state := result.State
 		if state == nil {
 			b.Fatal("no exported state")
 		}
-		L.Close()
 	}
 }

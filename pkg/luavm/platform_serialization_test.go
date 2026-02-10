@@ -9,9 +9,11 @@ import (
 
 func TestPlatformSerialization(t *testing.T) {
 	t.Run("platform serializes correctly", func(t *testing.T) {
-		L := NewVM(nil)
-		t.Cleanup(func() { L.Close() })
 		resetExportedState()
+		t.Cleanup(resetExportedState)
+		L := NewVM(nil)
+		testVM = L
+		t.Cleanup(func() { L.Close(); testVM = nil })
 
 		script := `
 			local p = bk.platform("linux", "arm64", "v8")
@@ -47,9 +49,11 @@ func TestPlatformSerialization(t *testing.T) {
 	})
 
 	t.Run("platform string serializes correctly", func(t *testing.T) {
-		L := NewVM(nil)
-		t.Cleanup(func() { L.Close() })
 		resetExportedState()
+		t.Cleanup(resetExportedState)
+		L := NewVM(nil)
+		testVM = L
+		t.Cleanup(func() { L.Close(); testVM = nil })
 
 		script := `
 			local base = bk.image("alpine:3.19", { platform = "linux/amd64" })
@@ -61,6 +65,9 @@ func TestPlatformSerialization(t *testing.T) {
 		}
 
 		state := GetExportedState()
+		if state == nil {
+			t.Fatal("Expected exported state")
+		}
 		platform := state.Platform()
 
 		if platform == nil {
@@ -77,9 +84,11 @@ func TestPlatformSerialization(t *testing.T) {
 	})
 
 	t.Run("platform table serializes correctly", func(t *testing.T) {
-		L := NewVM(nil)
-		t.Cleanup(func() { L.Close() })
 		resetExportedState()
+		t.Cleanup(resetExportedState)
+		L := NewVM(nil)
+		testVM = L
+		t.Cleanup(func() { L.Close(); testVM = nil })
 
 		script := `
 			local base = bk.image("ubuntu:24.04", { platform = { os = "darwin", arch = "arm64" } })
@@ -91,6 +100,9 @@ func TestPlatformSerialization(t *testing.T) {
 		}
 
 		state := GetExportedState()
+		if state == nil {
+			t.Fatal("Expected exported state")
+		}
 		platform := state.Platform()
 
 		if platform == nil {

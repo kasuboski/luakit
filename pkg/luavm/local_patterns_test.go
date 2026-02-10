@@ -8,7 +8,9 @@ func TestBkLocalWithPatterns(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local ctx = bk.local_("context", {
@@ -66,7 +68,9 @@ func TestBkLocalWithIncludeOnly(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local ctx = bk.local_("context", {
@@ -95,7 +99,9 @@ func TestBkLocalWithExcludeOnly(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local ctx = bk.local_("context", {
@@ -128,7 +134,9 @@ func TestBkLocalWithEmptyPatterns(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local ctx = bk.local_("context", {
@@ -158,7 +166,9 @@ func TestBkLocalWithSharedKeyHint(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local ctx = bk.local_("context", {

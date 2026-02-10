@@ -10,7 +10,9 @@ func TestExecSecurityOptionsExample(t *testing.T) {
 	resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")

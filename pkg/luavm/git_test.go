@@ -9,7 +9,9 @@ import (
 
 func TestBkGit(t *testing.T) {
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	L.Push(L.GetGlobal("bk"))
 	L.Push(L.GetField(L.Get(-1), "git"))
@@ -31,7 +33,9 @@ func TestBkGit(t *testing.T) {
 
 func TestBkGitEmptyString(t *testing.T) {
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	L.Push(L.GetGlobal("bk"))
 	L.Push(L.GetField(L.Get(-1), "git"))
@@ -47,7 +51,9 @@ func TestBkGitEmptyString(t *testing.T) {
 
 func TestBkGitWhitespaceOnly(t *testing.T) {
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	if err := L.DoString(`bk.git("   ")`); err == nil {
 		t.Error("Expected error when calling bk.git with whitespace-only string")
@@ -58,7 +64,9 @@ func TestBkGitWithRef(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local repo = bk.git("https://github.com/moby/buildkit.git", {
@@ -91,7 +99,9 @@ func TestBkGitWithKeepGitDir(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local repo = bk.git("https://github.com/moby/buildkit.git", {
@@ -123,7 +133,9 @@ func TestBkGitWithBothOptions(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local repo = bk.git("https://github.com/moby/buildkit.git", {
@@ -161,7 +173,9 @@ func TestBkGitWithBranchRef(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local repo = bk.git("https://gitlab.com/group/project.git", {
@@ -194,7 +208,9 @@ func TestBkGitWithCommitRef(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local repo = bk.git("https://github.com/moby/buildkit.git", {
@@ -227,7 +243,9 @@ func TestBkGitWithoutOptions(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local repo = bk.git("https://github.com/moby/buildkit.git")
@@ -260,7 +278,9 @@ func TestBkGitWithoutOptions(t *testing.T) {
 
 func TestBkGitReturnsState(t *testing.T) {
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	if err := L.DoString(`result = bk.git("https://github.com/moby/buildkit.git")`); err != nil {
 		t.Fatalf("Failed to call bk.git: %v", err)

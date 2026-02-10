@@ -8,8 +8,6 @@ import (
 	"sync"
 
 	lua "github.com/yuin/gopher-lua"
-
-	"github.com/kasuboski/luakit/pkg/dag"
 )
 
 var (
@@ -32,6 +30,11 @@ func NewVM(config *VMConfig) *lua.LState {
 	if config == nil {
 		config = &VMConfig{}
 	}
+
+	data := &vmData{}
+	data.L = L
+	L.SetGlobal("__luakit_vm_data", L.NewUserData())
+	L.GetGlobal("__luakit_vm_data").(*lua.LUserData).Value = data
 
 	registerStateType(L)
 	registerMountType(L)
@@ -181,13 +184,4 @@ func ResetSourceFiles() {
 	sourceMu.Lock()
 	defer sourceMu.Unlock()
 	sourceFiles = make(map[string][]byte)
-}
-
-func GetExportedState() *dag.State {
-	return exportedState
-}
-
-func ResetExportedState() {
-	exportedState = nil
-	exportedImageConfig = nil
 }

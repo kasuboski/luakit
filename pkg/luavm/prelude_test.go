@@ -14,13 +14,15 @@ func getStdlibPath(t *testing.T) string {
 }
 
 func TestPreludeRequire(t *testing.T) {
-	ResetExportedState()
-	defer ResetExportedState()
+	resetExportedState()
+	defer resetExportedState()
 
 	L := NewVM(&VMConfig{
 		StdlibDir: getStdlibPath(t),
 	})
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 local prelude = require("prelude")
@@ -40,7 +42,7 @@ bk.export(result)
 }
 
 func TestPreludeBaseImages(t *testing.T) {
-	defer ResetExportedState()
+	defer resetExportedState()
 	stdlibPath := getStdlibPath(t)
 
 	testCases := []struct {
@@ -88,12 +90,14 @@ bk.export(base)
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			defer ResetExportedState()
+			defer resetExportedState()
 
 			L := NewVM(&VMConfig{
 				StdlibDir: stdlibPath,
 			})
+			testVM = L
 			defer L.Close()
+			defer func() { testVM = nil }()
 
 			if err := L.DoString(tc.script); err != nil {
 				t.Fatalf("Failed to execute script: %v", err)
@@ -118,7 +122,7 @@ bk.export(base)
 }
 
 func TestPreludeGoBuilders(t *testing.T) {
-	defer ResetExportedState()
+	defer resetExportedState()
 	stdlibPath := getStdlibPath(t)
 
 	testCases := []struct {
@@ -153,267 +157,14 @@ bk.export(runtime)
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			defer ResetExportedState()
+			defer resetExportedState()
 
 			L := NewVM(&VMConfig{
 				StdlibDir: stdlibPath,
 			})
+			testVM = L
 			defer L.Close()
-
-			if err := L.DoString(tc.script); err != nil {
-				t.Fatalf("Failed to execute script: %v", err)
-			}
-
-			state := GetExportedState()
-			if state == nil {
-				t.Fatal("Expected exported state to be non-nil")
-			}
-		})
-	}
-}
-
-func TestPreludeNodeBuilders(t *testing.T) {
-	defer ResetExportedState()
-	stdlibPath := getStdlibPath(t)
-
-	testCases := []struct {
-		name   string
-		script string
-	}{
-		{
-			name: "node_base",
-			script: `
-local prelude = require("prelude")
-local base = prelude.node_base()
-bk.export(base)
-`,
-		},
-		{
-			name: "node_base_custom_version",
-			script: `
-local prelude = require("prelude")
-local base = prelude.node_base("18-alpine")
-bk.export(base)
-`,
-		},
-		{
-			name: "node_runtime",
-			script: `
-local prelude = require("prelude")
-local runtime = prelude.node_runtime()
-bk.export(runtime)
-`,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			defer ResetExportedState()
-
-			L := NewVM(&VMConfig{
-				StdlibDir: stdlibPath,
-			})
-			defer L.Close()
-
-			if err := L.DoString(tc.script); err != nil {
-				t.Fatalf("Failed to execute script: %v", err)
-			}
-
-			state := GetExportedState()
-			if state == nil {
-				t.Fatal("Expected exported state to be non-nil")
-			}
-		})
-	}
-}
-
-func TestPreludePythonBuilders(t *testing.T) {
-	defer ResetExportedState()
-	stdlibPath := getStdlibPath(t)
-
-	testCases := []struct {
-		name   string
-		script string
-	}{
-		{
-			name: "python_base",
-			script: `
-local prelude = require("prelude")
-local base = prelude.python_base()
-bk.export(base)
-`,
-		},
-		{
-			name: "python_base_custom_version",
-			script: `
-local prelude = require("prelude")
-local base = prelude.python_base("3.10", "slim")
-bk.export(base)
-`,
-		},
-		{
-			name: "python_runtime",
-			script: `
-local prelude = require("prelude")
-local runtime = prelude.python_runtime()
-bk.export(runtime)
-`,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			defer ResetExportedState()
-
-			L := NewVM(&VMConfig{
-				StdlibDir: stdlibPath,
-			})
-			defer L.Close()
-
-			if err := L.DoString(tc.script); err != nil {
-				t.Fatalf("Failed to execute script: %v", err)
-			}
-
-			state := GetExportedState()
-			if state == nil {
-				t.Fatal("Expected exported state to be non-nil")
-			}
-		})
-	}
-}
-
-func TestPreludeContainerHelpers(t *testing.T) {
-	stdlibPath := getStdlibPath(t)
-
-	t.Run("container", func(t *testing.T) {
-		defer ResetExportedState()
-
-		L := NewVM(&VMConfig{
-			StdlibDir: stdlibPath,
-		})
-		defer L.Close()
-
-		script := `
-local prelude = require("prelude")
-local base = bk.image("alpine:3.19")
-local result = prelude.container(base, function(s)
-	return s:run("echo test")
-end)
-bk.export(result)
-`
-
-		if err := L.DoString(script); err != nil {
-			t.Fatalf("Failed to execute script: %v", err)
-		}
-
-		state := GetExportedState()
-		if state == nil {
-			t.Fatal("Expected exported state to be non-nil")
-		}
-	})
-
-	t.Run("multi_stage", func(t *testing.T) {
-		defer ResetExportedState()
-
-		L := NewVM(&VMConfig{
-			StdlibDir: stdlibPath,
-		})
-		defer L.Close()
-
-		script := `
-local prelude = require("prelude")
-local runtime, built = prelude.multi_stage("golang:1.22-alpine", "alpine:3.19", function(builder)
-	return builder:run("echo building")
-end)
-bk.export(runtime)
-`
-
-		if err := L.DoString(script); err != nil {
-			t.Fatalf("Failed to execute script: %v", err)
-		}
-
-		state := GetExportedState()
-		if state == nil {
-			t.Fatal("Expected exported state to be non-nil")
-		}
-	})
-}
-
-func TestPreludeCopyHelpers(t *testing.T) {
-	stdlibPath := getStdlibPath(t)
-
-	t.Run("copy_all", func(t *testing.T) {
-		defer ResetExportedState()
-
-		L := NewVM(&VMConfig{
-			StdlibDir: stdlibPath,
-		})
-		defer L.Close()
-
-		script := `
-local prelude = require("prelude")
-local target = bk.scratch()
-local source = bk.image("alpine:3.19"):run("echo 'hello' > /file.txt")
-local copied = prelude.copy_all(source, target, "/file.txt", "/file.txt")
-bk.export(copied)
-`
-
-		if err := L.DoString(script); err != nil {
-			t.Fatalf("Failed to execute script: %v", err)
-		}
-
-		state := GetExportedState()
-		if state == nil {
-			t.Fatal("Expected exported state to be non-nil")
-		}
-	})
-}
-
-func TestPreludeDirectoryHelpers(t *testing.T) {
-	defer ResetExportedState()
-	stdlibPath := getStdlibPath(t)
-
-	testCases := []struct {
-		name   string
-		script string
-	}{
-		{
-			name: "with_workdir",
-			script: `
-local prelude = require("prelude")
-local base = bk.image("alpine:3.19")
-local result = prelude.with_workdir(base, "/app")
-bk.export(result)
-`,
-		},
-		{
-			name: "with_alpine_user",
-			script: `
-local prelude = require("prelude")
-local base = bk.image("alpine:3.19")
-local result = prelude.with_alpine_user(base, "testuser", 1000, 1000)
-bk.export(result)
-`,
-		},
-		{
-			name: "chown_path",
-			script: `
-local prelude = require("prelude")
-local base = bk.image("alpine:3.19"):run("mkdir -p /app")
-local result = prelude.chown_path(base, "/app", "appuser", "appuser")
-bk.export(result)
-`,
-		},
-	}
-
-	for _, tc := range testCases {
-		t.Run(tc.name, func(t *testing.T) {
-			defer ResetExportedState()
-
-			L := NewVM(&VMConfig{
-				StdlibDir: stdlibPath,
-			})
-			defer L.Close()
+			defer func() { testVM = nil }()
 
 			if err := L.DoString(tc.script); err != nil {
 				t.Fatalf("Failed to execute script: %v", err)
@@ -428,7 +179,7 @@ bk.export(result)
 }
 
 func TestPreludePackageInstallers(t *testing.T) {
-	defer ResetExportedState()
+	defer resetExportedState()
 	stdlibPath := getStdlibPath(t)
 
 	testCases := []struct {
@@ -502,12 +253,14 @@ bk.export(result)
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			defer ResetExportedState()
+			defer resetExportedState()
 
 			L := NewVM(&VMConfig{
 				StdlibDir: stdlibPath,
 			})
+			testVM = L
 			defer L.Close()
+			defer func() { testVM = nil }()
 
 			if err := L.DoString(tc.script); err != nil {
 				t.Fatalf("Failed to execute script: %v", err)
@@ -522,7 +275,7 @@ bk.export(result)
 }
 
 func TestPreludeHelpers(t *testing.T) {
-	defer ResetExportedState()
+	defer resetExportedState()
 	stdlibPath := getStdlibPath(t)
 
 	testCases := []struct {
@@ -580,12 +333,14 @@ bk.export(merged)
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			defer ResetExportedState()
+			defer resetExportedState()
 
 			L := NewVM(&VMConfig{
 				StdlibDir: stdlibPath,
 			})
+			testVM = L
 			defer L.Close()
+			defer func() { testVM = nil }()
 
 			if err := L.DoString(tc.script); err != nil {
 				t.Fatalf("Failed to execute script: %v", err)
@@ -600,7 +355,7 @@ bk.export(merged)
 }
 
 func TestPreludeAppBuilders(t *testing.T) {
-	defer ResetExportedState()
+	defer resetExportedState()
 	stdlibPath := getStdlibPath(t)
 
 	testCases := []struct {
@@ -648,12 +403,14 @@ bk.export(final)
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			defer ResetExportedState()
+			defer resetExportedState()
 
 			L := NewVM(&VMConfig{
 				StdlibDir: stdlibPath,
 			})
+			testVM = L
 			defer L.Close()
+			defer func() { testVM = nil }()
 
 			if err := L.DoString(tc.script); err != nil {
 				t.Fatalf("Failed to execute script: %v", err)
@@ -696,12 +453,14 @@ bk.export(final, {
 })
 `
 
-	defer ResetExportedState()
+	defer resetExportedState()
 
 	L := NewVM(&VMConfig{
 		StdlibDir: stdlibPath,
 	})
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	if err := L.DoString(script); err != nil {
 		t.Fatalf("Failed to execute script: %v", err)

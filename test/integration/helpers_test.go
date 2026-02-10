@@ -12,7 +12,6 @@ import (
 	"github.com/kasuboski/luakit/pkg/luavm"
 	pb "github.com/moby/buildkit/solver/pb"
 	"github.com/stretchr/testify/require"
-	lua "github.com/yuin/gopher-lua"
 )
 
 const (
@@ -305,24 +304,17 @@ func createTestScriptForGolden(t *testing.T, script, scriptName string) string {
 	return scriptPath
 }
 
-func createLuaVMAndRun(t *testing.T, script string) (*lua.LState, *dag.State, interface{}) {
+func createLuaVMAndRun(t *testing.T, script string) (*dag.State, interface{}) {
 	t.Helper()
-
-	luavm.ResetExportedState()
-	luavm.ResetSourceFiles()
 
 	scriptPath := createTestScript(t, script)
 	scriptData, err := os.ReadFile(scriptPath)
 	require.NoError(t, err)
 	luavm.RegisterSourceFile(scriptPath, scriptData)
 
-	L := luavm.NewVM(nil)
-	require.NoError(t, L.DoFile(scriptPath))
+	result, err := luavm.EvaluateFile(scriptPath, nil)
+	require.NoError(t, err)
+	require.NotNil(t, result.State, "should have exported state")
 
-	state := luavm.GetExportedState()
-	require.NotNil(t, state, "should have exported state")
-
-	imageConfig := luavm.GetExportedImageConfig()
-
-	return L, state, imageConfig
+	return result.State, result.ImageConfig
 }

@@ -12,9 +12,6 @@ import (
 )
 
 func TestSourceMappingIntegration(t *testing.T) {
-	luavm.ResetExportedState()
-	luavm.ResetSourceFiles()
-
 	script := `-- Line 1: Create base image
 local base = bk.image("alpine:3.19")
 
@@ -31,25 +28,21 @@ bk.export(result)
 		t.Fatalf("failed to write script: %v", err)
 	}
 
-	scriptData, _ := os.ReadFile(scriptPath)
-	luavm.RegisterSourceFile(scriptPath, scriptData)
-
-	L := luavm.NewVM(nil)
-	defer L.Close()
-
-	if err := L.DoFile(scriptPath); err != nil {
+	result, err := luavm.EvaluateFile(scriptPath, nil)
+	if err != nil {
 		t.Fatalf("failed to run script: %v", err)
 	}
 
-	state := luavm.GetExportedState()
+	state := result.State
 	if state == nil {
 		t.Fatal("no exported state")
 	}
 
-	imageConfig := luavm.GetExportedImageConfig()
+	imageConfig := result.ImageConfig
+	sourceFiles := result.SourceFiles
 
 	def, err := dag.Serialize(state, &dag.SerializeOptions{
-		SourceFiles: luavm.GetAllSourceFiles(),
+		SourceFiles: sourceFiles,
 		ImageConfig: imageConfig,
 	})
 	if err != nil {
@@ -127,9 +120,6 @@ bk.export(result)
 }
 
 func TestSourceMappingWithComplexDAG(t *testing.T) {
-	luavm.ResetExportedState()
-	luavm.ResetSourceFiles()
-
 	script := `local base = bk.image("alpine:3.19")
 local ctx = bk.local_("context")
 
@@ -153,25 +143,21 @@ bk.export(built)
 		t.Fatalf("failed to write script: %v", err)
 	}
 
-	scriptData, _ := os.ReadFile(scriptPath)
-	luavm.RegisterSourceFile(scriptPath, scriptData)
-
-	L := luavm.NewVM(nil)
-	defer L.Close()
-
-	if err := L.DoFile(scriptPath); err != nil {
+	result, err := luavm.EvaluateFile(scriptPath, nil)
+	if err != nil {
 		t.Fatalf("failed to run script: %v", err)
 	}
 
-	state := luavm.GetExportedState()
+	state := result.State
 	if state == nil {
 		t.Fatal("no exported state")
 	}
 
-	imageConfig := luavm.GetExportedImageConfig()
+	imageConfig := result.ImageConfig
+	sourceFiles := result.SourceFiles
 
 	def, err := dag.Serialize(state, &dag.SerializeOptions{
-		SourceFiles: luavm.GetAllSourceFiles(),
+		SourceFiles: sourceFiles,
 		ImageConfig: imageConfig,
 	})
 	if err != nil {
@@ -198,9 +184,6 @@ bk.export(built)
 }
 
 func TestSourceMappingLocationAccuracy(t *testing.T) {
-	luavm.ResetExportedState()
-	luavm.ResetSourceFiles()
-
 	script := `local s = bk.image("alpine:3.19")
 local r = s:run("echo hello")
 bk.export(r)`
@@ -211,25 +194,21 @@ bk.export(r)`
 		t.Fatalf("failed to write script: %v", err)
 	}
 
-	scriptData, _ := os.ReadFile(scriptPath)
-	luavm.RegisterSourceFile(scriptPath, scriptData)
-
-	L := luavm.NewVM(nil)
-	defer L.Close()
-
-	if err := L.DoFile(scriptPath); err != nil {
+	result, err := luavm.EvaluateFile(scriptPath, nil)
+	if err != nil {
 		t.Fatalf("failed to run script: %v", err)
 	}
 
-	state := luavm.GetExportedState()
+	state := result.State
 	if state == nil {
 		t.Fatal("no exported state")
 	}
 
-	imageConfig := luavm.GetExportedImageConfig()
+	imageConfig := result.ImageConfig
+	sourceFiles := result.SourceFiles
 
 	def, err := dag.Serialize(state, &dag.SerializeOptions{
-		SourceFiles: luavm.GetAllSourceFiles(),
+		SourceFiles: sourceFiles,
 		ImageConfig: imageConfig,
 	})
 	if err != nil {
@@ -256,9 +235,6 @@ func TestSourceMappingForProgressDisplay(t *testing.T) {
 	// #4 [build.lua:12] run("make -j$(nproc)")
 	// #4 DONE 42.3s
 
-	luavm.ResetExportedState()
-	luavm.ResetSourceFiles()
-
 	script := `local base = bk.image("alpine:3.19")
 local step1 = base:run("echo step 1")
 local step2 = step1:run("echo step 2")
@@ -271,25 +247,21 @@ bk.export(step3)`
 		t.Fatalf("failed to write script: %v", err)
 	}
 
-	scriptData, _ := os.ReadFile(scriptPath)
-	luavm.RegisterSourceFile(scriptPath, scriptData)
-
-	L := luavm.NewVM(nil)
-	defer L.Close()
-
-	if err := L.DoFile(scriptPath); err != nil {
+	result, err := luavm.EvaluateFile(scriptPath, nil)
+	if err != nil {
 		t.Fatalf("failed to run script: %v", err)
 	}
 
-	state := luavm.GetExportedState()
+	state := result.State
 	if state == nil {
 		t.Fatal("no exported state")
 	}
 
-	imageConfig := luavm.GetExportedImageConfig()
+	imageConfig := result.ImageConfig
+	sourceFiles := result.SourceFiles
 
 	def, err := dag.Serialize(state, &dag.SerializeOptions{
-		SourceFiles: luavm.GetAllSourceFiles(),
+		SourceFiles: sourceFiles,
 		ImageConfig: imageConfig,
 	})
 	if err != nil {

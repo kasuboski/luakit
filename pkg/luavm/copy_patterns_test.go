@@ -9,7 +9,9 @@ func TestCopyPatternsGitIgnoreStyle(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	// Test various .gitignore-style patterns
 	testCases := []struct {
@@ -47,8 +49,13 @@ func TestCopyPatternsGitIgnoreStyle(t *testing.T) {
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
 			// Reset state for each test case
-			exportedState = nil
-			exportedImageConfig = nil
+			if testVM != nil {
+				data := getVMData(testVM)
+				if data != nil {
+					data.exportedState = nil
+					data.exportedImageConfig = nil
+				}
+			}
 
 			script := buildCopyScript(tc.include, tc.exclude)
 
@@ -98,7 +105,9 @@ func TestCopyPatternsEmptyArrays(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local src = bk.image("alpine:3.19")
@@ -130,7 +139,9 @@ func TestCopyPatternsOnlyInclude(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local src = bk.image("alpine:3.19")
@@ -165,7 +176,9 @@ func TestCopyPatternsOnlyExclude(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local src = bk.image("alpine:3.19")
@@ -196,7 +209,9 @@ func TestCopyPatternsCombinedWithOtherOptions(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local src = bk.image("alpine:3.19")
@@ -253,7 +268,9 @@ func TestCopyPatternsWithWildcards(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	// Test common wildcard patterns used in .gitignore
 	script := `

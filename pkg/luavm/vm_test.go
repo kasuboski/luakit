@@ -315,13 +315,13 @@ func TestSandbox(t *testing.T) {
 }
 
 func TestGetExportedState(t *testing.T) {
-	exportedState = nil
-	t.Cleanup(func() {
-		exportedState = nil
-	})
+	resetExportedState()
+	t.Cleanup(resetExportedState)
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	if GetExportedState() != nil {
 		t.Error("Expected exported state to be nil before export")

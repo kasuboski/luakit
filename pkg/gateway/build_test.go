@@ -36,7 +36,7 @@ local result = base:run("echo hello > /hello.txt")`,
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			_, _, err := evaluateLua([]byte(tt.source), nil)
+			_, err := evaluateLua([]byte(tt.source), nil)
 			if tt.wantErr {
 				require.Error(t, err)
 			} else {
@@ -56,13 +56,13 @@ bk.export(result, {
     workdir = "/app",
 })`
 
-	_, config, err := evaluateLua([]byte(source), nil)
+	result, err := evaluateLua([]byte(source), nil)
 	require.NoError(t, err)
-	require.NotNil(t, config)
-	require.Equal(t, []string{"/bin/sh"}, config.Config.Entrypoint)
-	require.Contains(t, config.Config.Env, "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
-	require.Equal(t, "root", config.Config.User)
-	require.Equal(t, "/app", config.Config.WorkingDir)
+	require.NotNil(t, result.ImageConfig)
+	require.Equal(t, []string{"/bin/sh"}, result.ImageConfig.Config.Entrypoint)
+	require.Contains(t, result.ImageConfig.Config.Env, "PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin")
+	require.Equal(t, "root", result.ImageConfig.Config.User)
+	require.Equal(t, "/app", result.ImageConfig.Config.WorkingDir)
 }
 
 func TestValidateCaps(t *testing.T) {

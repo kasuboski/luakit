@@ -10,7 +10,9 @@ func TestCopyWithOwnerAndMode(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	testCases := []struct {
 		name            string
@@ -79,7 +81,9 @@ func TestCopyWithOwnerAndMode(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			defer resetExportedState()
 			L := NewVM(nil)
+			testVM = L
 			defer L.Close()
+			defer func() { testVM = nil }()
 
 			if err := L.DoString(tc.script); err != nil {
 				t.Fatalf("Failed to execute script: %v", err)
@@ -121,7 +125,9 @@ func TestMkdirWithOwnerAndMode(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	testCases := []struct {
 		name            string
@@ -176,7 +182,9 @@ func TestMkdirWithOwnerAndMode(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			defer resetExportedState()
 			L := NewVM(nil)
+			testVM = L
 			defer L.Close()
+			defer func() { testVM = nil }()
 
 			if err := L.DoString(tc.script); err != nil {
 				t.Fatalf("Failed to execute script: %v", err)
@@ -218,7 +226,9 @@ func TestMkfileWithOwnerAndMode(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	testCases := []struct {
 		name            string
@@ -270,7 +280,9 @@ func TestMkfileWithOwnerAndMode(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			defer resetExportedState()
 			L := NewVM(nil)
+			testVM = L
 			defer L.Close()
+			defer func() { testVM = nil }()
 
 			if err := L.DoString(tc.script); err != nil {
 				t.Fatalf("Failed to execute script: %v", err)
@@ -310,7 +322,9 @@ func TestMkfileWithOwnerAndMode(t *testing.T) {
 
 func TestOwnerParsing(t *testing.T) {
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	testCases := []struct {
 		name     string
@@ -483,7 +497,9 @@ func TestOwnerParsing(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			defer resetExportedState()
 			L := NewVM(nil)
+			testVM = L
 			defer L.Close()
+			defer func() { testVM = nil }()
 
 			if err := L.DoString(tc.script); err != nil {
 				t.Fatalf("Failed to execute script: %v", err)
@@ -540,7 +556,9 @@ func TestModeParsingStringAndNumber(t *testing.T) {
 		t.Run(tc.name, func(t *testing.T) {
 			defer resetExportedState()
 			L := NewVM(nil)
+			testVM = L
 			defer L.Close()
+			defer func() { testVM = nil }()
 
 			if err := L.DoString(tc.script); err != nil {
 				t.Fatalf("Failed to execute script: %v", err)
@@ -570,7 +588,9 @@ func TestComprehensiveFileOperationsWithOwnerAndMode(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")

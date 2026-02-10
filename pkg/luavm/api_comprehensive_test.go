@@ -702,7 +702,9 @@ func TestComplexMultiStageBuild(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local builder = bk.image("golang:1.22")
@@ -733,7 +735,9 @@ func TestDAGWithMultipleBranches(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("node:20")
@@ -768,7 +772,9 @@ func TestDAGWithDiffAndMerge(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -807,7 +813,9 @@ func TestFileOperationsChain(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -908,7 +916,9 @@ func TestExportWithoutAnyOperations(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		bk.export(bk.scratch())
@@ -1030,7 +1040,9 @@ func TestMountTypesPreserveDefaults(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local cache = bk.cache("/cache")
@@ -1065,7 +1077,9 @@ func TestCopyWithOptions(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local src = bk.image("alpine:3.19")
@@ -1110,7 +1124,9 @@ func TestMkdirWithOptions(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s = bk.image("alpine:3.19")
@@ -1147,7 +1163,9 @@ func TestRmWithOptions(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s = bk.image("alpine:3.19")
@@ -1187,7 +1205,9 @@ func TestDeeplyNestedDAG(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s = bk.image("alpine:3.19")
@@ -1222,7 +1242,9 @@ func TestConvergentDAG(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local base = bk.image("alpine:3.19")
@@ -1257,7 +1279,9 @@ func TestExportedImageConfig(t *testing.T) {
 	defer resetExportedState()
 
 	L := NewVM(nil)
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	script := `
 		local s = bk.image("alpine:3.19")

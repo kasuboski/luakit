@@ -229,7 +229,7 @@ result_error = ok
 }
 
 func TestRequireWithBuildkitAPI(t *testing.T) {
-	defer ResetExportedState()
+	defer resetExportedState()
 
 	tmpDir := t.TempDir()
 
@@ -260,7 +260,9 @@ bk.export(state)
 	L := NewVM(&VMConfig{
 		BuildContextDir: tmpDir,
 	})
+	testVM = L
 	defer L.Close()
+	defer func() { testVM = nil }()
 
 	if err := L.DoFile(scriptPath); err != nil {
 		t.Fatalf("Failed to execute script: %v", err)

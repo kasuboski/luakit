@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/kasuboski/luakit/pkg/dag"
 	"github.com/kasuboski/luakit/pkg/luavm"
@@ -182,33 +183,27 @@ func handleBuild() {
 		os.Exit(1)
 	}
 
-	luavm.RegisterSourceFile(args.script, scriptData)
-
 	config := createVMConfig(args.script)
-	L := luavm.NewVM(config)
-	defer L.Close()
 
 	for k, v := range flags.frontendArgs {
 		os.Setenv(k, v)
 	}
 
-	if err = L.DoFile(args.script); err != nil {
+	result, err := luavm.Evaluate(strings.NewReader(string(scriptData)), args.script, config)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
-	state := luavm.GetExportedState()
-	if state == nil {
+	if result.State == nil {
 		fmt.Fprintln(os.Stderr, "error: no bk.export() call — nothing to build")
 		os.Exit(1)
 	}
 
-	imageConfig := luavm.GetExportedImageConfig()
-
 	var def *pb.Definition
-	def, err = dag.Serialize(state, &dag.SerializeOptions{
-		ImageConfig: imageConfig,
-		SourceFiles: luavm.GetAllSourceFiles(),
+	def, err = dag.Serialize(result.State, &dag.SerializeOptions{
+		ImageConfig: result.ImageConfig,
+		SourceFiles: result.SourceFiles,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: failed to serialize definition: %v\n", err)
@@ -325,25 +320,15 @@ func handleDag() {
 		os.Exit(1)
 	}
 
-	scriptData, err := os.ReadFile(args.script)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "error: failed to read script: %v\n", err)
-		os.Exit(1)
-	}
-
-	luavm.RegisterSourceFile(args.script, scriptData)
-
 	config := createVMConfig(args.script)
-	L := luavm.NewVM(config)
-	defer L.Close()
 
-	if err := L.DoFile(args.script); err != nil {
+	result, err := luavm.EvaluateFile(args.script, config)
+	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: %v\n", err)
 		os.Exit(1)
 	}
 
-	state := luavm.GetExportedState()
-	if state == nil {
+	if result.State == nil {
 		fmt.Fprintln(os.Stderr, "error: no bk.export() call — nothing to build")
 		os.Exit(1)
 	}
@@ -354,7 +339,7 @@ func handleDag() {
 		if flags.filterOp != "" {
 			writer.SetFilter(flags.filterOp)
 		}
-		if err := writer.Write(state); err != nil {
+		if err := writer.Write(result.State); err != nil {
 			fmt.Fprintf(os.Stderr, "error: failed to write DOT: %v\n", err)
 			os.Exit(1)
 		}
@@ -363,7 +348,7 @@ func handleDag() {
 		if flags.filterOp != "" {
 			writer.SetFilter(flags.filterOp)
 		}
-		if err := writer.Write(state); err != nil {
+		if err := writer.Write(result.State); err != nil {
 			fmt.Fprintf(os.Stderr, "error: failed to write JSON: %v\n", err)
 			os.Exit(1)
 		}
@@ -389,27 +374,15 @@ func validateScript() error {
 		return fmt.Errorf("failed to read script: %w", err)
 	}
 
-	luavm.RegisterSourceFile(args.script, scriptData)
-
 	config := createVMConfig(args.script)
-	L := luavm.NewVM(config)
-	defer L.Close()
 
-	if err = L.DoFile(args.script); err != nil {
+	result, err := luavm.Evaluate(strings.NewReader(string(scriptData)), args.script, config)
+	if err != nil {
 		return fmt.Errorf("%w", err)
 	}
 
-	state := luavm.GetExportedState()
-	if state == nil {
-		return fmt.Errorf("no bk.export() call — nothing to build")
-	}
-
-	_, err = dag.Serialize(state, &dag.SerializeOptions{
-		SourceFiles: luavm.GetAllSourceFiles(),
-		ImageConfig: luavm.GetExportedImageConfig(),
-	})
-	if err != nil {
-		return fmt.Errorf("failed to serialize definition: %w", err)
+	if result.State == nil {
+		return fmt.Errorf("no bk.export() call found in script")
 	}
 
 	return nil

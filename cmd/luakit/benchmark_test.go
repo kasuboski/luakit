@@ -29,25 +29,13 @@ bk.export(result)`
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		luavm.ResetSourceFiles()
-		luavm.ResetExportedState()
-
-		scriptData, err := os.ReadFile(tmpFile.Name())
+		config := &luavm.VMConfig{}
+		result, err := luavm.EvaluateFile(tmpFile.Name(), config)
 		if err != nil {
 			b.Fatal(err)
 		}
 
-		luavm.RegisterSourceFile(tmpFile.Name(), scriptData)
-
-		config := &luavm.VMConfig{}
-		L := luavm.NewVM(config)
-		defer L.Close()
-
-		if err = L.DoFile(tmpFile.Name()); err != nil {
-			b.Fatal(err)
-		}
-
-		state := luavm.GetExportedState()
+		state := result.State
 		if state == nil {
 			b.Fatal("no exported state")
 		}
@@ -78,25 +66,13 @@ func BenchmarkCLIColdStart100LineScript(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		luavm.ResetSourceFiles()
-		luavm.ResetExportedState()
-
-		scriptData, err := os.ReadFile(tmpFile.Name())
+		config := &luavm.VMConfig{}
+		result, err := luavm.EvaluateFile(tmpFile.Name(), config)
 		if err != nil {
 			b.Fatal(err)
 		}
 
-		luavm.RegisterSourceFile(tmpFile.Name(), scriptData)
-
-		config := &luavm.VMConfig{}
-		L := luavm.NewVM(config)
-		defer L.Close()
-
-		if err = L.DoFile(tmpFile.Name()); err != nil {
-			b.Fatal(err)
-		}
-
-		state := luavm.GetExportedState()
+		state := result.State
 		if state == nil {
 			b.Fatal("no exported state")
 		}
@@ -124,25 +100,13 @@ bk.export(result)`
 	b.ResetTimer()
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		luavm.ResetSourceFiles()
-		luavm.ResetExportedState()
-
-		scriptData, err := os.ReadFile(tmpFile.Name())
+		config := &luavm.VMConfig{}
+		result, err := luavm.EvaluateFile(tmpFile.Name(), config)
 		if err != nil {
 			b.Fatal(err)
 		}
 
-		luavm.RegisterSourceFile(tmpFile.Name(), scriptData)
-
-		config := &luavm.VMConfig{}
-		L := luavm.NewVM(config)
-		defer L.Close()
-
-		if err = L.DoFile(tmpFile.Name()); err != nil {
-			b.Fatal(err)
-		}
-
-		state := luavm.GetExportedState()
+		state := result.State
 		if state == nil {
 			b.Fatal("no exported state")
 		}
