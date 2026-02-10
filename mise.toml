@@ -4,6 +4,7 @@ mise.file = ".env"
 
 [tools]
 go = 'prefix:1.25'
+"aqua:LuaLS/lua-language-server" = "latest"
 
 [vars]
 binary_name = "luakit"
@@ -189,6 +190,10 @@ else
     exit 1
 fi
 '''
+
+[tasks."lint:lua"]
+description = "Run LuaLS type check on Lua files"
+run = "lua-language-server --check ."
 
 [tasks.vet]
 description = "Run go vet"

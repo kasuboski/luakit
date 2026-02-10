@@ -7,13 +7,17 @@ local builder_deps = builder:run({
     "apk", "add", "--no-cache", "git", "ca-certificates"
 })
 
+local context_files = bk.local_("context", { include_patterns = { "go.*" } })
+
 local mod_cache = builder_deps:run({ "go", "mod", "download" }, {
     cwd = "/app",
     mounts = {
-        bk.local_("context", { include_patterns = { "go.*" } }),
+        bk.bind(context_files, "/app"),
         bk.cache("/go/pkg/mod", { sharing = "shared", id = "gomod" }),
     },
 })
+
+local full_context = bk.local_("context")
 
 local built = mod_cache:run({
     "sh", "-c",
@@ -21,7 +25,7 @@ local built = mod_cache:run({
 }, {
     cwd = "/app",
     mounts = {
-        bk.local_("context"),
+        bk.bind(full_context, "/app"),
         bk.cache("/go/pkg/mod", { sharing = "shared", id = "gomod" }),
         bk.cache("/root/.cache/go-build", { sharing = "shared", id = "gobuild" }),
     },

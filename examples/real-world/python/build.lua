@@ -26,10 +26,12 @@ local with_pip = base_env:run({
     },
 })
 
+local req_files = bk.local_("context", { include_patterns = { "requirements.txt" } })
+
 local with_deps = with_pip:run({ "pip", "install", "--no-cache-dir", "-r", "requirements.txt" }, {
     cwd = "/workspace",
     mounts = {
-        bk.local_("context", { include_patterns = { "requirements.txt" } }),
+        bk.bind(req_files, "/workspace"),
         bk.cache("/root/.cache/pip", { sharing = "shared", id = "pipcache" }),
     },
 })

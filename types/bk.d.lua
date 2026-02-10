@@ -1,69 +1,69 @@
 ---@meta
 
 ---@class ImageOptions
----@field platform Platform|platform_string
+---@field platform? Platform|platform_string
 
 ---@class LocalOptions
----@field include string[]
----@field exclude string[]
----@field shared_key_hint string
+---@field include? string[]
+---@field exclude? string[]
+---@field shared_key_hint? string
 
 ---@class GitOptions
----@field ref string
----@field keep_git_dir boolean
+---@field ref? string
+---@field keep_git_dir? boolean
 
 ---@class HTTPOptions
----@field checksum string
----@field filename string
----@field chmod integer
----@field headers table<string, string>
----@field username string
----@field password string
+---@field checksum? string
+---@field filename? string
+---@field chmod? integer
+---@field headers? table<string, string>
+---@field username? string
+---@field password? string
 
 ---@class CacheOptions
----@field id string
----@field sharing "shared"|"private"|"locked"
+---@field id? string
+---@field sharing? "shared"|"private"|"locked"
 
 ---@class SecretOptions
----@field id string
----@field uid integer
----@field gid integer
----@field mode integer
----@field optional boolean
+---@field id? string
+---@field uid? integer
+---@field gid? integer
+---@field mode? integer
+---@field optional? boolean
 
 ---@class SSHOptions
----@field dest string
----@field id string
----@field uid integer
----@field gid integer
----@field mode integer
----@field optional boolean
+---@field dest? string
+---@field id? string
+---@field uid? integer
+---@field gid? integer
+---@field mode? integer
+---@field optional? boolean
 
 ---@class TmpfsOptions
----@field size integer
+---@field size? integer
 
 ---@class BindOptions
----@field readonly boolean
----@field selector string
+---@field readonly? boolean
+---@field selector? string
 
 ---@class ExportConfig
----@field entrypoint string[]
----@field cmd string[]
----@field env table<string, string>
----@field user string
----@field workdir string
----@field expose string[]
----@field labels table<string, string>
----@field os string
----@field arch string
----@field variant string
+---@field entrypoint? string[]
+---@field cmd? string[]
+---@field env? table<string, string>
+---@field user? string
+---@field workdir? string
+---@field expose? string[]
+---@field labels? table<string, string>
+---@field os? string
+---@field arch? string
+---@field variant? string
 
 ---@alias platform_string string
 
 ---@class Platform
----@field os string
----@field arch string
----@field variant string
+---@field os? string
+---@field arch? string
+---@field variant? string
 
 ---@class BK
 local BK = {}

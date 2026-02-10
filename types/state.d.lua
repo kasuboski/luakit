@@ -1,48 +1,46 @@
 ---@meta
 
 ---@class ExecOptions
----@field env table<string, string>
----@field cwd string
----@field user string
----@field network "host"|"none"|"sandbox"
----@field security "sandbox"|"insecure"
----@field mounts Mount[]
----@field hostname string
----@field valid_exit_codes integer|integer[]|string
+---@field env? table<string, string>
+---@field cwd? string
+---@field user? string
+---@field network? "host"|"none"|"sandbox"
+---@field security? "sandbox"|"insecure"
+---@field mounts? Mount[]
+---@field hostname? string
+---@field valid_exit_codes? integer|integer[]|string
 
 ---@class CopyOptions
----@field mode string|integer
----@field follow_symlink boolean
----@field create_dest_path boolean
----@field allow_wildcard boolean
----@field include string[]
----@field exclude string[]
----@field owner ChownOpt
+---@field mode? string|integer
+---@field follow_symlink? boolean
+---@field create_dest_path? boolean
+---@field allow_wildcard? boolean
+---@field include? string[]
+---@field exclude? string[]
+---@field owner? ChownOpt
 
 ---@class MkdirOptions
----@field mode string|integer
----@field make_parents boolean
----@field owner ChownOpt
+---@field mode? string|integer
+---@field make_parents? boolean
+---@field owner? ChownOpt
 
 ---@class MkfileOptions
----@field mode string|integer
----@field owner ChownOpt
+---@field mode? string|integer
+---@field owner? ChownOpt
 
 ---@class RmOptions
----@field allow_not_found boolean
----@field allow_wildcard boolean
+---@field allow_not_found? boolean
+---@field allow_wildcard? boolean
 
 ---@class MetadataOptions
----@field description string
----@field progress_group string
+---@field description? string
+---@field progress_group? string
 
 ---@class ChownOpt
----@field user UserOpt
----@field group UserOpt
+---@field user? UserOpt
+---@field group? UserOpt
 
----@class UserOpt
----@field Name string
----@field ID integer
+---@alias UserOpt string|integer
 
 ---A build state representing a point in the build graph
 ---@class State
