@@ -16,3 +16,6 @@ We are implementing the plan in @SPEC.md
 * Lua editor type definitions are in `types/` directory
 * When adding/modifying API in `pkg/luavm/api.go` or `pkg/luavm/state.go`, update corresponding `.d.lua` files
 * Type definitions use LuaLS/LuaCATS annotations for VSCode, Neovim, and other Lua editors
+
+## Documentation
+* Documentation is in `docs/` directory
