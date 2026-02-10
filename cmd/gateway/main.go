@@ -34,6 +34,6 @@ func main() {
 		return gateway.Build(ctx, c)
 	}); err != nil {
 		bklog.L.Errorf("fatal error: %+v", err)
-		panic(err)
+		os.Exit(1)
 	}
 }

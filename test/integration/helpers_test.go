@@ -1,12 +1,12 @@
 package integration
 
 import (
+	"log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 	"testing"
-	"time"
 
 	"github.com/kasuboski/luakit/pkg/dag"
 	"github.com/kasuboski/luakit/pkg/luavm"
@@ -14,21 +14,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-const (
-	buildTimeout = 5 * time.Minute
-	defaultImage = "alpine:3.19"
-)
-
-func skipIfNoBuildKit(t *testing.T) {
-	if _, err := exec.LookPath("docker"); err != nil {
-		t.Skip("Docker not found. Install Docker to run these tests.")
+func TestMain(m *testing.M) {
+	wd, _ := os.Getwd()
+	luakitPath := filepath.Join(wd, "..", "..", "dist", "luakit")
+	if _, err := os.Stat(luakitPath); err != nil {
+		log.Fatalf("luakit binary not found at %s. Build it first with: go build -o dist/luakit ./cmd/luakit", luakitPath)
 	}
-}
-
-func skipIfNoDocker(t *testing.T) {
-	if _, err := exec.LookPath("docker"); err != nil {
-		t.Skip("Docker not found. Install Docker to run these tests.")
-	}
+	os.Exit(m.Run())
 }
 
 func runLuakitBuild(t *testing.T, scriptPath, contextDir string) ([]byte, error) {

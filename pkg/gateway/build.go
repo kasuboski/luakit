@@ -12,7 +12,6 @@ import (
 	gwclient "github.com/moby/buildkit/frontend/gateway/client"
 	"github.com/moby/buildkit/solver/pb"
 	"github.com/moby/buildkit/util/apicaps"
-	"github.com/pkg/errors"
 )
 
 const (
@@ -47,20 +46,20 @@ func Build(ctx context.Context, c gwclient.Client, opts ...BuildOpt) (*gwclient.
 
 	luaSource, err := readLuaFile(ctx, c, options.Entrypoint)
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read %s", options.Entrypoint)
+		return nil, fmt.Errorf("failed to read %s: %w", options.Entrypoint, err)
 	}
 
 	if len(luaSource) == 0 {
-		return nil, errors.Errorf("no lua source code provided")
+		return nil, fmt.Errorf("no lua source code provided")
 	}
 
 	result, err := evaluateLua(luaSource, buildOpts.Opts)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to evaluate lua script")
+		return nil, fmt.Errorf("failed to evaluate lua script: %w", err)
 	}
 
 	if result.State == nil {
-		return nil, errors.Errorf("no bk.export() call — nothing to build")
+		return nil, fmt.Errorf("no bk.export() call — nothing to build")
 	}
 
 	def, err := dag.Serialize(result.State, &dag.SerializeOptions{
@@ -68,18 +67,18 @@ func Build(ctx context.Context, c gwclient.Client, opts ...BuildOpt) (*gwclient.
 		SourceFiles: result.SourceFiles,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to serialize definition")
+		return nil, fmt.Errorf("failed to serialize definition: %w", err)
 	}
 
 	if len(def.Def) == 0 {
-		return nil, errors.New("empty definition")
+		return nil, fmt.Errorf("empty definition")
 	}
 
 	res, err := c.Solve(ctx, gwclient.SolveRequest{
 		Definition: def,
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to solve definition")
+		return nil, fmt.Errorf("failed to solve definition: %w", err)
 	}
 
 	return res, nil
@@ -88,16 +87,16 @@ func Build(ctx context.Context, c gwclient.Client, opts ...BuildOpt) (*gwclient.
 func readLuaFile(ctx context.Context, c gwclient.Client, filename string) ([]byte, error) {
 	inputs, err := c.Inputs(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get inputs")
+		return nil, fmt.Errorf("failed to get inputs: %w", err)
 	}
 
 	if len(inputs) == 0 {
-		return nil, errors.Errorf("no build context provided. Provide at least the 'context' input")
+		return nil, fmt.Errorf("no build context provided. Provide at least the 'context' input")
 	}
 
 	stateCtx, ok := inputs["context"]
 	if !ok {
-		return nil, errors.Errorf("required input 'context' not found. Available inputs: %v", getAvailableInputNames(inputs))
+		return nil, fmt.Errorf("required input 'context' not found. Available inputs: %v", getAvailableInputNames(inputs))
 	}
 
 	if len(inputs) > 1 {
@@ -108,32 +107,32 @@ func readLuaFile(ctx context.Context, c gwclient.Client, filename string) ([]byt
 			}
 		}
 		if len(unexpectedInputs) > 0 {
-			return nil, errors.Errorf("unsupported input(s) provided: %v. Currently only 'context' input is supported", unexpectedInputs)
+			return nil, fmt.Errorf("unsupported input(s) provided: %v. Currently only 'context' input is supported", unexpectedInputs)
 		}
 	}
 
 	llbDef, err := stateCtx.Marshal(ctx)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to marshal context state")
+		return nil, fmt.Errorf("failed to marshal context state: %w", err)
 	}
 
 	res, err := c.Solve(ctx, gwclient.SolveRequest{
 		Definition: llbDef.ToPB(),
 	})
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to solve context")
+		return nil, fmt.Errorf("failed to solve context: %w", err)
 	}
 
 	ref, err := res.SingleRef()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to get reference from result")
+		return nil, fmt.Errorf("failed to get reference from result: %w", err)
 	}
 
 	data, err := ref.ReadFile(ctx, gwclient.ReadRequest{
 		Filename: filename,
 	})
 	if err != nil {
-		return nil, errors.Wrapf(err, "failed to read file %s", filename)
+		return nil, fmt.Errorf("failed to read file %s: %w", filename, err)
 	}
 
 	return data, nil
@@ -166,7 +165,7 @@ func evaluateLua(source []byte, frontendOpts map[string]string) (*luavm.EvalResu
 
 func validateCaps(caps apicaps.CapSet) error {
 	if err := caps.Supports(pb.CapFileBase); err != nil {
-		return errors.Wrap(err, "needs BuildKit 0.5 or later")
+		return fmt.Errorf("needs BuildKit 0.5 or later: %w", err)
 	}
 	return nil
 }

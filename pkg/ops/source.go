@@ -2,6 +2,7 @@ package ops
 
 import (
 	"fmt"
+	"log"
 	"net/url"
 	"regexp"
 	"strings"
@@ -62,6 +63,7 @@ func Image(ref string, luaFile string, luaLine int, platform *pb.Platform) *dag.
 	}
 
 	if err := ValidateImageRef(ref); err != nil {
+		log.Printf("validation failed: %v", err)
 		return nil
 	}
 
@@ -91,6 +93,7 @@ func Local(name string, luaFile string, luaLine int, opts *LocalOptions) *dag.St
 	}
 
 	if err := ValidateLocalName(name); err != nil {
+		log.Printf("validation failed: %v", err)
 		return nil
 	}
 
@@ -123,6 +126,7 @@ func Git(url string, luaFile string, luaLine int, opts *GitOptions) *dag.State {
 	}
 
 	if err := ValidateGitURL(url); err != nil {
+		log.Printf("validation failed: %v", err)
 		return nil
 	}
 
@@ -150,6 +154,7 @@ func HTTP(url string, luaFile string, luaLine int, opts *HTTPOptions) *dag.State
 	}
 
 	if err := ValidateHTTPURL(url); err != nil {
+		log.Printf("validation failed: %v", err)
 		return nil
 	}
 
@@ -171,6 +176,7 @@ func HTTP(url string, luaFile string, luaLine int, opts *HTTPOptions) *dag.State
 		}
 		if opts.Username != "" && opts.Password != "" {
 			if strings.Contains(opts.Username, ":") {
+				log.Printf("validation failed: username must not contain colon")
 				return nil
 			}
 			attrs["http.basicauth"] = opts.Username + ":" + opts.Password
@@ -217,37 +223,78 @@ func ValidateImageRef(ref string) error {
 		actualRef = ref[len(dockerImagePrefix):]
 	}
 
-	if parsed, err := reference.ParseNormalizedNamed(actualRef); err == nil {
-		if _, ok := parsed.(reference.Digested); ok {
-			return nil
-		}
-		if parsed.(reference.Named).Name() != "" {
-			return nil
-		}
+	if err := validateNormalizedReference(actualRef); err == nil {
+		return nil
 	}
 
-	if strings.Count(actualRef, "@") == 1 {
-		parts := strings.SplitN(actualRef, "@", 2)
-		if len(parts) == 2 && parts[0] != "" && parts[1] != "" {
-			if strings.Contains(parts[0], ":") || strings.Contains(parts[0], "@") {
-				return fmt.Errorf("invalid image reference %q: image name should not contain : or @ before digest", ref)
-			}
-			return nil
-		}
+	if err := validateDigestFormat(actualRef, ref); err == nil {
+		return nil
 	}
 
-	if strings.Count(actualRef, ":") == 1 && !strings.Contains(actualRef, "@") {
-		parts := strings.SplitN(actualRef, ":", 2)
-		if len(parts) == 2 && parts[0] != "" && parts[1] != "" {
-			return nil
-		}
+	if err := validateTagFormat(actualRef); err == nil {
+		return nil
 	}
 
-	if actualRef != "" && !strings.Contains(actualRef, ":") && !strings.Contains(actualRef, "@") {
+	if err := validateSimpleName(actualRef); err == nil {
 		return nil
 	}
 
 	return fmt.Errorf("invalid image reference %q", ref)
+}
+
+func validateNormalizedReference(actualRef string) error {
+	parsed, err := reference.ParseNormalizedNamed(actualRef)
+	if err != nil {
+		return err
+	}
+
+	if _, ok := parsed.(reference.Digested); ok {
+		return nil
+	}
+
+	if parsed.Name() != "" {
+		return nil
+	}
+
+	return fmt.Errorf("invalid normalized reference")
+}
+
+func validateDigestFormat(actualRef, originalRef string) error {
+	if strings.Count(actualRef, "@") != 1 {
+		return fmt.Errorf("not a digest format")
+	}
+
+	parts := strings.SplitN(actualRef, "@", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return fmt.Errorf("invalid digest format")
+	}
+
+	if strings.Contains(parts[0], ":") || strings.Contains(parts[0], "@") {
+		return fmt.Errorf("invalid image reference %q: image name should not contain : or @ before digest", originalRef)
+	}
+
+	return nil
+}
+
+func validateTagFormat(actualRef string) error {
+	if strings.Count(actualRef, ":") != 1 || strings.Contains(actualRef, "@") {
+		return fmt.Errorf("not a tag format")
+	}
+
+	parts := strings.SplitN(actualRef, ":", 2)
+	if len(parts) != 2 || parts[0] == "" || parts[1] == "" {
+		return fmt.Errorf("invalid tag format")
+	}
+
+	return nil
+}
+
+func validateSimpleName(actualRef string) error {
+	if actualRef == "" || strings.Contains(actualRef, ":") || strings.Contains(actualRef, "@") {
+		return fmt.Errorf("not a simple name")
+	}
+
+	return nil
 }
 
 func ValidateLocalName(name string) error {

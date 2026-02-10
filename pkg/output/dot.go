@@ -2,7 +2,6 @@ package output
 
 import (
 	"fmt"
-	"os"
 	"strings"
 
 	"github.com/kasuboski/luakit/pkg/dag"
@@ -38,14 +37,7 @@ func (w *DOTWriter) Write(state *dag.State) error {
 
 	builder.WriteString("}\n")
 
-	output := builder.String()
-
-	if w.outputPath == "" || w.outputPath == "-" {
-		_, err := os.Stdout.WriteString(output)
-		return err
-	}
-
-	return os.WriteFile(w.outputPath, []byte(output), 0644)
+	return writeOutput([]byte(builder.String()), w.outputPath)
 }
 
 func (w *DOTWriter) writeNode(state *dag.State, visited map[string]bool, builder *strings.Builder) {
@@ -108,28 +100,5 @@ func (w *DOTWriter) writeNode(state *dag.State, visited map[string]bool, builder
 		if w.filterOp == "" || inputOpType == w.filterOp {
 			builder.WriteString(fmt.Sprintf("  \"%s\" -> \"%s\";\n", inputDigest, digest))
 		}
-	}
-}
-
-func getOpType(op *pb.Op) string {
-	if op == nil {
-		return "Unknown"
-	}
-
-	switch op.Op.(type) {
-	case *pb.Op_Exec:
-		return "Exec"
-	case *pb.Op_Source:
-		return "Source"
-	case *pb.Op_File:
-		return "File"
-	case *pb.Op_Build:
-		return "Build"
-	case *pb.Op_Merge:
-		return "Merge"
-	case *pb.Op_Diff:
-		return "Diff"
-	default:
-		return "Unknown"
 	}
 }

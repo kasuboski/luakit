@@ -160,37 +160,14 @@ func bkGit(L *lua.LState) int {
 }
 
 func bkHTTP(L *lua.LState) int {
-	urlArg := L.Get(1)
-	if urlArg.Type() != lua.LTString {
-		L.ArgError(1, "string expected")
-		return 0
-	}
-	url := urlArg.String()
-
-	if url == "" || isWhitespaceOnly(url) {
-		L.RaiseError("bk.http: URL must not be empty")
-		return 0
-	}
-
-	file, line := getCallSite(L)
-
-	var opts *ops.HTTPOptions
-	if L.GetTop() >= 2 {
-		optsTable := L.CheckTable(2)
-		opts = parseHTTPOptions(L, optsTable)
-	}
-
-	state := ops.HTTP(url, file, line, opts)
-	if state == nil {
-		L.RaiseError("bk.http: failed to create http state")
-		return 0
-	}
-
-	L.Push(newState(L, state))
-	return 1
+	return bkHTTPImpl(L, "http")
 }
 
 func bkHTTPS(L *lua.LState) int {
+	return bkHTTPImpl(L, "https")
+}
+
+func bkHTTPImpl(L *lua.LState, scheme string) int {
 	urlArg := L.Get(1)
 	if urlArg.Type() != lua.LTString {
 		L.ArgError(1, "string expected")
@@ -199,7 +176,7 @@ func bkHTTPS(L *lua.LState) int {
 	url := urlArg.String()
 
 	if url == "" || isWhitespaceOnly(url) {
-		L.RaiseError("bk.https: URL must not be empty")
+		L.RaiseError("bk.%s: URL must not be empty", scheme)
 		return 0
 	}
 
@@ -213,7 +190,7 @@ func bkHTTPS(L *lua.LState) int {
 
 	state := ops.HTTP(url, file, line, opts)
 	if state == nil {
-		L.RaiseError("bk.https: failed to create http state")
+		L.RaiseError("bk.%s: failed to create http state", scheme)
 		return 0
 	}
 

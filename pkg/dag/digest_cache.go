@@ -7,10 +7,15 @@ import (
 	"google.golang.org/protobuf/proto"
 )
 
+const (
+	initialCacheCapacity = 1024
+	maxCacheSize         = 4096
+)
+
 var (
-	digestCache    = make(map[string]digest.Digest, 1024)
+	digestCache    = make(map[string]digest.Digest, initialCacheCapacity)
 	digestMu       sync.RWMutex
-	marshalCache   = make(map[string][]byte, 1024)
+	marshalCache   = make(map[string][]byte, initialCacheCapacity)
 	marshalCacheMu sync.RWMutex
 )
 
@@ -39,7 +44,7 @@ func (n *OpNode) Digest() digest.Digest {
 		return d
 	}
 	d := digest.FromBytes(dt)
-	if len(digestCache) < 4096 {
+	if len(digestCache) < maxCacheSize {
 		digestCache[string(dt)] = d
 	}
 	digestMu.Unlock()
@@ -81,7 +86,7 @@ func (n *OpNode) MarshalOp() ([]byte, error) {
 		return nil, err
 	}
 
-	if len(marshalCache) < 4096 {
+	if len(marshalCache) < maxCacheSize {
 		marshalCacheMu.Lock()
 		marshalCache[key] = dt
 		marshalCacheMu.Unlock()
@@ -92,10 +97,10 @@ func (n *OpNode) MarshalOp() ([]byte, error) {
 
 func ClearDigestCache() {
 	digestMu.Lock()
-	digestCache = make(map[string]digest.Digest, 1024)
+	digestCache = make(map[string]digest.Digest, initialCacheCapacity)
 	digestMu.Unlock()
 
 	marshalCacheMu.Lock()
-	marshalCache = make(map[string][]byte, 1024)
+	marshalCache = make(map[string][]byte, initialCacheCapacity)
 	marshalCacheMu.Unlock()
 }

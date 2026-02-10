@@ -2,7 +2,6 @@ package output
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/moby/buildkit/solver/pb"
 )
@@ -23,10 +22,5 @@ func (w *ProtobufWriter) Write(def *pb.Definition) error {
 		return fmt.Errorf("failed to marshal definition: %w", err)
 	}
 
-	if w.outputPath == "" || w.outputPath == "-" {
-		_, err = os.Stdout.Write(data)
-		return err
-	}
-
-	return os.WriteFile(w.outputPath, data, 0644)
+	return writeOutput(data, w.outputPath)
 }

@@ -3,7 +3,6 @@ package output
 import (
 	"encoding/json"
 	"fmt"
-	"os"
 
 	"github.com/kasuboski/luakit/pkg/dag"
 	pb "github.com/moby/buildkit/solver/pb"
@@ -51,12 +50,7 @@ func (w *JSONWriter) Write(state *dag.State) error {
 		return fmt.Errorf("failed to marshal JSON: %w", err)
 	}
 
-	if w.outputPath == "" || w.outputPath == "-" {
-		_, err = os.Stdout.Write(data)
-		return err
-	}
-
-	return os.WriteFile(w.outputPath, data, 0644)
+	return writeOutput(data, w.outputPath)
 }
 
 func (w *JSONWriter) collectNodes(state *dag.State, visited map[string]bool) []*DAGNode {

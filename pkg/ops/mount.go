@@ -41,6 +41,33 @@ type BindOptions struct {
 	Readonly bool
 }
 
+func applyFileOpt(opt interface{}, uid, gid, mode uint32, optional bool) {
+	switch o := opt.(type) {
+	case *pb.SecretOpt:
+		if uid != 0 {
+			o.Uid = uid
+		}
+		if gid != 0 {
+			o.Gid = gid
+		}
+		if mode != 0 {
+			o.Mode = mode
+		}
+		o.Optional = optional
+	case *pb.SSHOpt:
+		if uid != 0 {
+			o.Uid = uid
+		}
+		if gid != 0 {
+			o.Gid = gid
+		}
+		if mode != 0 {
+			o.Mode = mode
+		}
+		o.Optional = optional
+	}
+}
+
 func CacheMount(dest string, opts *CacheOptions) *Mount {
 	mountType := pb.MountType_CACHE
 	cacheOpt := &pb.CacheOpt{}
@@ -82,16 +109,7 @@ func SecretMount(dest string, opts *SecretOptions) *Mount {
 		if opts.ID != "" {
 			secretOpt.ID = opts.ID
 		}
-		if opts.UID != 0 {
-			secretOpt.Uid = opts.UID
-		}
-		if opts.GID != 0 {
-			secretOpt.Gid = opts.GID
-		}
-		if opts.Mode != 0 {
-			secretOpt.Mode = opts.Mode
-		}
-		secretOpt.Optional = opts.Optional
+		applyFileOpt(secretOpt, opts.UID, opts.GID, opts.Mode, opts.Optional)
 	}
 
 	return &Mount{
@@ -119,16 +137,7 @@ func SSHMount(opts *SSHOptions) *Mount {
 		if opts.ID != "" {
 			sshOpt.ID = opts.ID
 		}
-		if opts.UID != 0 {
-			sshOpt.Uid = opts.UID
-		}
-		if opts.GID != 0 {
-			sshOpt.Gid = opts.GID
-		}
-		if opts.Mode != 0 {
-			sshOpt.Mode = opts.Mode
-		}
-		sshOpt.Optional = opts.Optional
+		applyFileOpt(sshOpt, opts.UID, opts.GID, opts.Mode, opts.Optional)
 	}
 
 	return &Mount{
