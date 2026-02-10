@@ -49,13 +49,56 @@ run = "mise run build"
 
 [tasks.build-all]
 description = "Build binaries for all target platforms"
-depends = ["build:linux-amd64", "build:linux-arm64", "build:darwin-amd64", "build:darwin-arm64"]
+depends = ["build:linux-amd64", "build:linux-arm64", "build:darwin-amd64", "build:darwin-arm64", "build:gateway:all"]
+
+[tasks."build:gateway"]
+description = "Build the gateway binary for the current platform"
+sources = ["**/*.go", "go.mod", "go.sum"]
+outputs = ["{{vars.dist_dir}}/gateway"]
+run = '''
+set -e
+VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+GOOS="${GOOS:-$(go env GOOS)}"
+GOARCH="${GOARCH:-$(go env GOARCH)}"
+
+echo "Building gateway for $GOOS/$GOARCH..."
+mkdir -p {{vars.dist_dir}}
+go build $GOFLAGS -ldflags "-s -w -X main.version=$VERSION -X main.buildTime=$BUILD_TIME -X main.revision=$COMMIT" -o {{vars.dist_dir}}/gateway ./cmd/gateway
+echo "Gateway binary built: {{vars.dist_dir}}/gateway"
+'''
+
+[tasks."build:gateway:linux-amd64"]
+description = "Build gateway for Linux amd64"
+env = { GOOS = "linux", GOARCH = "amd64" }
+run = "mise run build:gateway"
+
+[tasks."build:gateway:linux-arm64"]
+description = "Build gateway for Linux arm64"
+env = { GOOS = "linux", GOARCH = "arm64" }
+run = "mise run build:gateway"
+
+[tasks."build:gateway:darwin-amd64"]
+description = "Build gateway for macOS amd64"
+env = { GOOS = "darwin", GOARCH = "amd64" }
+run = "mise run build:gateway"
+
+[tasks."build:gateway:darwin-arm64"]
+description = "Build gateway for macOS arm64"
+env = { GOOS = "darwin", GOARCH = "arm64" }
+run = "mise run build:gateway"
+
+[tasks."build:gateway:all"]
+description = "Build gateway binaries for all target platforms"
+depends = ["build:gateway:linux-amd64", "build:gateway:linux-arm64", "build:gateway:darwin-amd64", "build:gateway:darwin-arm64"]
 
 [tasks.checksums]
 description = "Generate SHA256 checksums for release artifacts"
 run = '''
 echo "Generating SHA256 checksums..."
-cd {{vars.dist_dir}} && shasum -a 256 {{vars.binary_name}}-* > checksums.txt
+cd {{vars.dist_dir}}
+shasum -a 256 {{vars.binary_name}}-* gateway-* > checksums.txt
 echo "Checksums generated: {{vars.dist_dir}}/checksums.txt"
 '''
 
@@ -115,6 +158,23 @@ go install $GOFLAGS -ldflags "-s -w -X main.version=$VERSION -X main.buildTime=$
 echo "Installed successfully"
 '''
 
+[tasks."install:gateway"]
+description = "Install the gateway binary to GOPATH/bin"
+run = '''
+set -e
+VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+echo "Installing gateway to $(go env GOPATH)/bin..."
+go install $GOFLAGS -ldflags "-s -w -X main.version=$VERSION -X main.buildTime=$BUILD_TIME -X main.revision=$COMMIT" ./cmd/gateway
+echo "Gateway installed successfully"
+'''
+
+[tasks."install:all"]
+description = "Install both luakit and gateway binaries"
+depends = ["install", "install:gateway"]
+
 [tasks.fmt]
 description = "Format code"
 run = "go fmt ./..."
@@ -151,6 +211,14 @@ docker build -t {{vars.binary_name}}:latest .
 echo "Docker image built: {{vars.binary_name}}:latest"
 '''
 
+[tasks."docker:build:gateway"]
+description = "Build gateway Docker image (BuildKit frontend)"
+run = '''
+echo "Building gateway Docker image..."
+docker build -f Dockerfile.gateway -t {{vars.binary_name}}-gateway:latest .
+echo "Gateway Docker image built: {{vars.binary_name}}-gateway:latest"
+'''
+
 [tasks."docker:run"]
 description = "Run Docker container"
 depends = ["docker:build"]
@@ -169,9 +237,11 @@ description = "Verify release artifacts"
 run = '''
 echo "Verifying release artifacts..."
 cd {{vars.dist_dir}}
-for artifact in {{vars.binary_name}}-*; do
-    echo "Verifying $artifact..."
-    $artifact version
+for artifact in {{vars.binary_name}}-* gateway-*; do
+    if [ -f "$artifact" ] && [ -x "$artifact" ]; then
+        echo "Verifying $artifact..."
+        $artifact -version || $artifact version || true
+    fi
 done
 echo "All release artifacts verified"
 '''

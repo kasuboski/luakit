@@ -43,7 +43,11 @@ brew install https://github.com/kasuboski/luakit/releases/download/v0.1.0/luakit
 **With Go:**
 
 ```bash
+# Install CLI binary
 go install github.com/kasuboski/luakit/cmd/luakit@latest
+
+# Install gateway binary (for BuildKit frontend mode)
+go install github.com/kasuboski/luakit/cmd/gateway@latest
 ```
 
 ### Your First Build
@@ -61,6 +65,44 @@ Build the image:
 ```bash
 luakit build build.lua | buildctl build --no-frontend --local context=.
 ```
+
+## Two Ways to Use Luakit
+
+Luakit works in two modes:
+
+### CLI Mode (Local Development)
+Use the `luakit` binary directly for local builds and iteration:
+```bash
+luakit build build.lua | buildctl build --no-frontend --local context=.
+```
+
+The CLI reads `build.lua` from disk and outputs the LLB Definition protobuf to stdout, which you can pipe to `buildctl`.
+
+### Gateway Frontend (CI/Production)
+Package luakit as a BuildKit frontend image for container-based builds. The `gateway` binary acts as a BuildKit frontend via the gRPC protocol, receiving the build context from BuildKit and returning the LLB Definition.
+
+```bash
+# Using docker buildx
+docker buildx build \
+  --frontend gateway.v0 \
+  --opt source=docker.io/kasuboski/luakit:latest \
+  --local context=. \
+  -t myapp:latest
+```
+
+Or with buildctl directly:
+```bash
+buildctl build \
+  --frontend=gateway.v0 \
+  --opt source=docker.io/kasuboski/luakit:latest \
+  --local context=.
+```
+
+The gateway mode reads `build.lua` from the build context and returns the LLB Definition to BuildKit via gRPC, enabling seamless integration with Docker BuildKit and CI/CD pipelines.
+
+**When to use which?**
+- **CLI mode**: Local development, debugging, one-off builds
+- **Gateway mode**: CI/CD pipelines, production builds, when you need a container image reference
 
 ## Documentation
 
@@ -121,6 +163,8 @@ bk.export(final, {
 
 ## CLI Usage
 
+### CLI Mode
+
 ```bash
 # Validate a script
 luakit validate build.lua
@@ -128,13 +172,34 @@ luakit validate build.lua
 # Visualize the build graph
 luakit dag build.lua | dot -Tsvg > dag.svg
 
-# Build an image
+# Build an image (pipes to buildctl)
 luakit build build.lua | buildctl build --no-frontend --local context=.
 
-# Build with Docker
+# Build with custom output file
+luakit build -o output.pb build.lua
+```
+
+### Gateway Mode
+
+```bash
+# Build with Docker using the gateway frontend
 docker buildx build \
   --frontend gateway.v0 \
-  --opt source=$(pwd)/build.lua \
+  --opt source=docker.io/kasuboski/luakit:latest \
+  --local context=. \
+  -t myapp:latest
+
+# Build with buildctl using the gateway frontend
+buildctl build \
+  --frontend=gateway.v0 \
+  --opt source=docker.io/kasuboski/luakit:latest \
+  --local context=.
+
+# Using a specific build.lua path in context
+docker buildx build \
+  --frontend gateway.v0 \
+  --opt source=docker.io/kasuboski/luakit:latest \
+  --opt filename=builds/production.lua \
   --local context=. \
   -t myapp:latest
 ```
@@ -162,31 +227,80 @@ Lua is ideal for build definitions:
 ## Architecture
 
 ```
-build.lua  ──▶  luakit CLI  ──▶  LLB Definition (protobuf)  ──▶  BuildKit
-                ┌─────────────┐
-                │  Go binary   │
-                │  ┌─────────┐ │
-                │  │ Lua VM  │ │    Evaluates build.lua
-                │  │(gopher- │ │    Lua calls Go-registered functions
-                │  │  lua)   │ │    which build an internal DAG
-                │  └────┬────┘ │
-                │       │      │
-                │  ┌────▼────┐ │
-                │  │  DAG    │ │    In-memory graph of Op nodes
-                │  │ Builder │ │    with edges (inputs)
-                │  └────┬────┘ │
-                │       │      │
-                │  ┌────▼────┐ │
-                │  │   LLB   │ │    Marshal DAG to pb.Definition
-                │  │Serialize│ │    using BuildKit's Go types
-                │  └────┬────┘ │
-                └───────│──────┘
-                        │
-                        ▼
-               buildctl / gateway GRPC
+┌────────────────────────────────────────────────────────────────────┐
+│                           CLI Mode                                 │
+├────────────────────────────────────────────────────────────────────┤
+│                                                                    │
+│  build.lua  ──▶  luakit CLI  ──▶  pb.Definition  ──▶  buildctl    │
+│                   (cmd/luakit)              (stdout)              │
+│                     ┌─────────────┐                                │
+│                     │  Go binary   │                               │
+│                     │  ┌─────────┐ │                                │
+│                     │  │ Lua VM  │ │    Evaluates build.lua        │
+│                     │  │(gopher- │ │    Lua calls Go-registered     │
+│                     │  │  lua)   │ │    functions                  │
+│                     │  └────┬────┘ │                                │
+│                     │       │      │                                │
+│                     │  ┌────▼────┐ │                                │
+│                     │  │  DAG    │ │    In-memory graph of Op nodes │
+│                     │  │ Builder │ │    with edges (inputs)        │
+│                     │  └────┬────┘ │                                │
+│                     │       │      │                                │
+│                     │  ┌────▼────┐ │                                │
+│                     │  │   LLB   │ │    Marshal DAG to pb.Definition│
+│                     │  │Serialize│ │    using BuildKit's Go types   │
+│                     │  └────┬────┘ │                                │
+│                     └───────│──────┘                                │
+│                             │                                       │
+│                             ▼                                       │
+│                         stdout                                     │
+│                             │                                       │
+└─────────────────────────────┼───────────────────────────────────────┘
+                              │
+                              ▼
+                      BuildKit Daemon
+                              │
+┌─────────────────────────────┼───────────────────────────────────────┐
+│                      Gateway Mode                                    │
+├────────────────────────────────────────────────────────────────────┤
+│                              │                                       │
+│            BuildKit gRPC ────▼──────▶  luakit gateway               │
+│         (build context + build.lua)      (cmd/gateway)               │
+│                        ┌─────────────┐                             │
+│                        │  Go binary   │                             │
+│                        │  ┌─────────┐ │                             │
+│                        │  │ Lua VM  │ │    Evaluates build.lua     │
+│                        │  │(gopher- │ │    from build context      │
+│                        │  │  lua)   │ │                             │
+│                        │  └────┬────┘ │                             │
+│                        │       │      │                             │
+│                        │  ┌────▼────┐ │                             │
+│                        │  │  DAG    │ │    In-memory graph         │
+│                        │  │ Builder │ │                             │
+│                        │  └────┬────┘ │                             │
+│                        │       │      │                             │
+│                        │  ┌────▼────┐ │                             │
+│                        │  │   LLB   │ │    Marshal to pb.Definition│
+│                        │  │Serialize│ │                             │
+│                        │  └────┬────┘ │                             │
+│                        └───────│──────┘                             │
+│                                │                                     │
+│                                ▼                                     │
+│                      gRPC response (pb.Definition)                 │
+│                                │                                     │
+│                                ▼                                     │
+│                      BuildKit Daemon                               │
+└────────────────────────────────┴─────────────────────────────────────┘
 ```
 
 ## Development
+
+### Components
+
+Luakit consists of two main binaries:
+
+- **`cmd/luakit`** - CLI tool for local development. Reads `build.lua` from disk and outputs LLB Definition to stdout.
+- **`cmd/gateway`** - BuildKit frontend for CI/production. Receives build context via gRPC from BuildKit and returns LLB Definition.
 
 ### Setup
 
@@ -199,7 +313,11 @@ go mod download
 ### Build
 
 ```bash
+# Build CLI binary
 go build -o luakit ./cmd/luakit
+
+# Build gateway binary (for BuildKit frontend mode)
+go build -o gateway ./cmd/gateway
 ```
 
 ### Test
