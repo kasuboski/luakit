@@ -19,3 +19,26 @@ We are implementing the plan in @SPEC.md
 
 ## Documentation
 * Documentation is in `docs/` directory
+
+<!-- opensrc:start -->
+
+## Source Code Reference
+
+Source code for dependencies is available in `opensrc/` for deeper understanding of implementation details.
+
+See `opensrc/sources.json` for the list of available packages and their versions.
+
+Use this source code when you need to understand how a package works internally, not just its types/interface.
+
+### Fetching Additional Source Code
+
+To fetch source code for a package or repository you need to understand, run:
+
+```bash
+bunx opensrc <package>           # npm package (e.g., npx opensrc zod)
+bunx opensrc pypi:<package>      # Python package (e.g., npx opensrc pypi:requests)
+bunx opensrc crates:<package>    # Rust crate (e.g., npx opensrc crates:serde)
+bunx opensrc <owner>/<repo>      # GitHub repo (e.g., npx opensrc vercel/ai)
+```
+
+<!-- opensrc:end -->
