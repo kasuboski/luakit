@@ -12,7 +12,7 @@ local context_files = bk.local_("context", { include_patterns = { "go.*" } })
 local mod_cache = builder_deps:run({ "go", "mod", "download" }, {
     cwd = "/app",
     mounts = {
-        bk.bind(context_files, "/app"),
+        bk.bind(context_files, "/app", { readonly = false }),
         bk.cache("/go/pkg/mod", { sharing = "shared", id = "gomod" }),
     },
 })
@@ -25,7 +25,7 @@ local built = mod_cache:run({
 }, {
     cwd = "/app",
     mounts = {
-        bk.bind(full_context, "/app"),
+        bk.bind(full_context, "/app", { readonly = false }),
         bk.cache("/go/pkg/mod", { sharing = "shared", id = "gomod" }),
         bk.cache("/root/.cache/go-build", { sharing = "shared", id = "gobuild" }),
     },

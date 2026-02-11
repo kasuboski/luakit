@@ -86,11 +86,11 @@ func (n *OpNode) MarshalOp() ([]byte, error) {
 		return nil, err
 	}
 
+	marshalCacheMu.Lock()
 	if len(marshalCache) < maxCacheSize {
-		marshalCacheMu.Lock()
 		marshalCache[key] = dt
-		marshalCacheMu.Unlock()
 	}
+	marshalCacheMu.Unlock()
 
 	return dt, nil
 }
