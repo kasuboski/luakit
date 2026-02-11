@@ -20,8 +20,6 @@ jobs:
       - uses: actions/checkout@v4
       - name: Set up mise
         uses: jdx/mise-action@v2
-        with:
-          version: latest
       - name: Cache mise
         id: cache
         run: echo "key=${{ runner.os }}-mise-${{ hashFiles('mise.toml') }}" >> $GITHUB_OUTPUT
