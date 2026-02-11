@@ -22,7 +22,7 @@ jobs:
         uses: jdx/mise-action@v2
       - name: Cache mise
         id: cache
-        run: echo "key=${{ runner.os }}-mise-${{ hashFiles('mise.toml') }}" >> $GITHUB_OUTPUT
+        run: echo "key=${{ runner.os }}-mise-${{ hashFiles('mise.toml') }}" >> "$GITHUB_OUTPUT"
 
   lint:
     name: Lint (${{ matrix.target }})

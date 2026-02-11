@@ -293,17 +293,17 @@ jobs:
           # Create multi-arch manifests for CLI
           for TAG in $TAGS; do
             echo "Creating CLI manifest for: $TAG"
-            docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG-linux-amd64 \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG-linux-arm64 || true
-            docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG || true
+            docker manifest create "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG" \
+              "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG-linux-amd64" \
+              "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG-linux-arm64" || true
+            docker manifest push "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG" || true
           done
           
           # Create multi-arch manifests for Gateway
           for TAG in $TAGS; do
             echo "Creating gateway manifest for: $TAG"
-            docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG-linux-amd64 \
-              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG-linux-arm64 || true
-            docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG || true
+            docker manifest create "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG" \
+              "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG-linux-amd64" \
+              "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG-linux-arm64" || true
+            docker manifest push "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG" || true
           done

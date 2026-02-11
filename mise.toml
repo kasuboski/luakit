@@ -7,6 +7,7 @@ actionlint = 'latest'
 go = 'prefix:1.25'
 golangci-lint = 'latest'
 "aqua:LuaLS/lua-language-server" = "latest"
+shellcheck = '0.11.0'
 
 [vars]
 binary_name = "luakit"

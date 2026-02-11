@@ -29,7 +29,7 @@ jobs:
         id: changelog
         run: |
           VERSION=${GITHUB_REF#refs/tags/v}
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
           
           # Get the commit history since the last tag
           PREV_TAG=$(git describe --tags --abbrev=0 HEAD^ 2>/dev/null || echo "")
@@ -121,10 +121,10 @@ jobs:
           cd artifacts
           # Collect all binary files matching version pattern
           for dir in */; do
-            if [ -f "$dir$(basename $dir)" ]; then
-              file="$dir$(basename $dir)"
+            dir_name="$(basename "$dir")"
+            if [ -f "$dir$dir_name" ]; then
               # Calculate checksum with the artifact name (without directory)
-              (cd "$dir" && sha256sum "$(basename $dir)") >> ../checksums.txt
+              (cd "$dir" && sha256sum "$dir_name") >> ../checksums.txt
             fi
           done
           cd ..
@@ -169,7 +169,6 @@ jobs:
       - name: Generate Homebrew formula
         run: |
           VERSION=${{ env.VERSION }}
-          VERSION_WITHOUT_V=${VERSION#v}
           
           # Get the checksum for darwin-arm64 (default for Homebrew)
           CHECKSUM=$(curl -sL https://github.com/${{ github.repository }}/releases/download/${VERSION}/checksums.txt | grep "luakit.*darwin-arm64" | awk '{print $1}')
@@ -191,7 +190,7 @@ jobs:
             depends_on "go" => :build
 
             def install
-              system "go", "build", *std_go_args(ldflags: "-s -w -X main.version=#{VERSION_WITHOUT_V}"), "./cmd/luakit"
+              system "go", "build", *std_go_args(ldflags: "-s -w -X main.version=#{VERSION}"), "./cmd/luakit"
             end
 
             test do
