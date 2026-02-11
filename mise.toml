@@ -110,7 +110,7 @@ depends = ["build-all", "checksums"]
 
 [tasks.test]
 description = "Run tests"
-run = "go test -v -race -coverprofile=coverage.out -covermode=atomic ./..."
+run = "go test -v -race -coverprofile=coverage.out -covermode=atomic ./cmd/... ./pkg/..."
 
 [tasks."golden:update"]
 description = "Regenerate golden test files"
@@ -121,25 +121,13 @@ run = "scripts/update-golden.sh"
 description = "Run integration tests with BuildKit"
 depends = ["build"]
 run = '''
-#!/usr/bin/env bash
-set -e
-
-if [ -z "$BUILDKIT_HOST" ] && [ ! -S /run/buildkit/buildkitd.sock ]; then
-    echo "Error: BuildKit daemon not running"
-    echo "Start with: mise run buildkit:start"
-    exit 1
-fi
-
-scripts/start-buildkit.sh
-trap 'scripts/stop-buildkit.sh' EXIT
-
-go test -tags=e2e -v -timeout=15m ./test/integration/...
+go test -v -timeout=15m ./test/integration/...
 '''
 
 [tasks."test:coverage"]
 description = "Generate coverage report"
+depends = ["test"]
 run = '''
-go test -race -coverprofile=coverage.out -covermode=atomic ./...
 go tool cover -html=coverage.out -o coverage.html
 '''
 
@@ -187,16 +175,18 @@ description = "Format code"
 run = "go fmt ./..."
 
 [tasks.lint]
-description = "Run linter"
-run = '''
-    golangci-lint run ./...
-'''
+description = "Run all linters"
+depends = ["lint:go", "lint:lua", "lint:vet"]
+
+[tasks."lint:go"]
+description = "Run golangci-lint"
+run = "golangci-lint run ./..."
 
 [tasks."lint:lua"]
 description = "Run LuaLS type check on Lua files"
 run = "lua-language-server --check ."
 
-[tasks.vet]
+[tasks."lint:vet"]
 description = "Run go vet"
 run = "go vet ./..."
 

@@ -3,14 +3,20 @@ We are implementing the plan in @SPEC.md
 
 ## Developer Environment
 * Always use `mise` to manage your environment and tasks.
+* Always build with `mise run build` not `go build`.
 * Use `go` commands to add dependencies. Never editing `go.mod` or `go.sum` files.
 * Remember to run `go mod tidy` after adding dependencies.
-* Use modern `go` features. `mise run tasks.go-modernize` will automatically modernize your code.
+* Use modern `go` features. `mise run go-modernize` will automatically modernize your code.
 
 ## Verification
-* Use `go test` to run tests.
-* Use `go vet` to check for potential issues.
-* Use `go fmt` to format code.
+* Use `mise run test` to run tests.
+* Use `mise run test:coverage` to generate a coverage report.
+* Use `mise run test:integration` to run integration tests (requires BuildKit daemon).
+* Use `mise run fmt` to format code.
+* Use `mise run lint` to run all linters.
+* Use `mise run lint:go` to run golangci-lint.
+* Use `mise run lint:lua` to type check Lua files.
+* Use `mise run lint:vet` to run go vet.
 
 ## Type Definitions
 * Lua editor type definitions are in `types/` directory

@@ -6,7 +6,7 @@ import (
 
 // CacheEntry holds cached image configuration
 type CacheEntry struct {
-	config interface{}
+	config any
 	err    error
 }
 
@@ -24,7 +24,7 @@ func NewCache() *Cache {
 }
 
 // Get retrieves a cached entry for the given reference
-func (c *Cache) Get(ref string) (interface{}, error) {
+func (c *Cache) Get(ref string) (any, error) {
 	c.mu.RLock()
 	entry, exists := c.entries[ref]
 	c.mu.RUnlock()
@@ -37,7 +37,7 @@ func (c *Cache) Get(ref string) (interface{}, error) {
 }
 
 // Set stores a cached entry for the given reference
-func (c *Cache) Set(ref string, config interface{}, err error) {
+func (c *Cache) Set(ref string, config any, err error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
