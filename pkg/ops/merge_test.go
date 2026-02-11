@@ -73,8 +73,8 @@ func TestMerge(t *testing.T) {
 }
 
 func TestMergeWithTwoStates(t *testing.T) {
-	state1 := Image("alpine:3.19", "test.lua", 1, nil)
-	state2 := Image("ubuntu:24.04", "test.lua", 2, nil)
+	state1 := Image("alpine:3.19", "test.lua", 1, nil, nil)
+	state2 := Image("ubuntu:24.04", "test.lua", 2, nil, nil)
 
 	states := []*dag.State{state1, state2}
 	result := Merge(states, "test.lua", 10)

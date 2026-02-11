@@ -4,6 +4,7 @@ mise.file = ".env"
 
 [tools]
 go = 'prefix:1.25'
+golangci-lint = 'latest'
 "aqua:LuaLS/lua-language-server" = "latest"
 
 [vars]
@@ -111,6 +112,11 @@ depends = ["build-all", "checksums"]
 description = "Run tests"
 run = "go test -v -race -coverprofile=coverage.out -covermode=atomic ./..."
 
+[tasks."golden:update"]
+description = "Regenerate golden test files"
+depends = ["build"]
+run = "scripts/update-golden.sh"
+
 [tasks."test:integration"]
 description = "Run integration tests with BuildKit"
 depends = ["build"]
@@ -183,12 +189,7 @@ run = "go fmt ./..."
 [tasks.lint]
 description = "Run linter"
 run = '''
-if command -v golangci-lint >/dev/null 2>&1; then
     golangci-lint run ./...
-else
-    echo "golangci-lint not found. Install it from https://golangci-lint.run/usage/install/"
-    exit 1
-fi
 '''
 
 [tasks."lint:lua"]

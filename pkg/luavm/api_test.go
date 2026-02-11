@@ -80,8 +80,8 @@ func TestBasicLuaScript(t *testing.T) {
 		t.Fatal("Expected SourceOp")
 	}
 
-	if sourceOp.Identifier != "docker-image://alpine:3.19" {
-		t.Errorf("Expected identifier 'docker-image://alpine:3.19', got '%s'", sourceOp.Identifier)
+	if sourceOp.Identifier != "docker-image://docker.io/library/alpine:3.19" {
+		t.Errorf("Expected identifier 'docker-image://docker.io/library/alpine:3.19', got '%s'", sourceOp.Identifier)
 	}
 }
 
@@ -109,8 +109,8 @@ func TestBkImageReturnsState(t *testing.T) {
 	}
 
 	sourceOp := state.Op().Op().GetSource()
-	if sourceOp.Identifier != "docker-image://ubuntu:24.04" {
-		t.Errorf("Expected identifier 'docker-image://ubuntu:24.04', got '%s'", sourceOp.Identifier)
+	if sourceOp.Identifier != "docker-image://docker.io/library/ubuntu:24.04" {
+		t.Errorf("Expected identifier 'docker-image://docker.io/library/ubuntu:24.04', got '%s'", sourceOp.Identifier)
 	}
 }
 
@@ -200,8 +200,8 @@ func TestMultipleSourceOps(t *testing.T) {
 	}
 
 	sourceOp := state.Op().Op().GetSource()
-	if sourceOp.Identifier != "docker-image://alpine:3.19" {
-		t.Errorf("Expected identifier 'docker-image://alpine:3.19', got '%s'", sourceOp.Identifier)
+	if sourceOp.Identifier != "docker-image://docker.io/library/alpine:3.19" {
+		t.Errorf("Expected identifier 'docker-image://docker.io/library/alpine:3.19', got '%s'", sourceOp.Identifier)
 	}
 }
 
@@ -808,24 +808,24 @@ func TestStateRunWithMounts(t *testing.T) {
 	state := GetExportedState()
 	execOp := state.Op().Op().GetExec()
 
-	if len(execOp.Mounts) != 4 {
-		t.Errorf("Expected 4 mounts, got %d", len(execOp.Mounts))
+	if len(execOp.Mounts) != 5 {
+		t.Errorf("Expected 5 mounts, got %d", len(execOp.Mounts))
 	}
 
-	if execOp.Mounts[0].Dest != "/cache" {
-		t.Errorf("Expected first mount dest '/cache', got '%s'", execOp.Mounts[0].Dest)
+	if execOp.Mounts[1].Dest != "/cache" {
+		t.Errorf("Expected second mount dest '/cache', got '%s'", execOp.Mounts[1].Dest)
 	}
 
-	if execOp.Mounts[1].Dest != "/run/secrets/secret" {
-		t.Errorf("Expected second mount dest '/run/secrets/secret', got '%s'", execOp.Mounts[1].Dest)
+	if execOp.Mounts[2].Dest != "/run/secrets/secret" {
+		t.Errorf("Expected third mount dest '/run/secrets/secret', got '%s'", execOp.Mounts[2].Dest)
 	}
 
-	if execOp.Mounts[2].Dest != "/run/ssh" {
-		t.Errorf("Expected third mount dest '/run/ssh', got '%s'", execOp.Mounts[2].Dest)
+	if execOp.Mounts[3].Dest != "/run/ssh" {
+		t.Errorf("Expected fourth mount dest '/run/ssh', got '%s'", execOp.Mounts[3].Dest)
 	}
 
-	if execOp.Mounts[3].Dest != "/tmp" {
-		t.Errorf("Expected fourth mount dest '/tmp', got '%s'", execOp.Mounts[3].Dest)
+	if execOp.Mounts[4].Dest != "/tmp" {
+		t.Errorf("Expected fifth mount dest '/tmp', got '%s'", execOp.Mounts[4].Dest)
 	}
 }
 

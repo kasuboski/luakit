@@ -2,6 +2,7 @@
 
 ---@class ImageOptions
 ---@field platform? Platform|platform_string
+---@field resolve_digest? boolean
 
 ---@class LocalOptions
 ---@field include? string[]

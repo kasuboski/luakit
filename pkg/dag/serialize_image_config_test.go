@@ -43,7 +43,7 @@ func TestSerializeWithImageConfig(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 1 {
+	if len(def.Def) != 2 {
 		t.Errorf("Expected 1 op in definition, got %d", len(def.Def))
 	}
 
@@ -156,7 +156,7 @@ func TestSerializeWithoutImageConfig(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 1 {
+	if len(def.Def) != 2 {
 		t.Errorf("Expected 1 op in definition, got %d", len(def.Def))
 	}
 

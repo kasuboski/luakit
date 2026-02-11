@@ -50,6 +50,6 @@ func ExampleSerialize() {
 	fmt.Printf("Metadata entries: %d\n", len(def.Metadata))
 
 	// Output:
-	// Serialized 2 operations
+	// Serialized 3 operations
 	// Metadata entries: 0
 }

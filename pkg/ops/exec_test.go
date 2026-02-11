@@ -1,6 +1,7 @@
 package ops
 
 import (
+	"strings"
 	"testing"
 
 	pb "github.com/moby/buildkit/solver/pb"
@@ -55,7 +56,7 @@ func TestNewExecOpWithNoOptions(t *testing.T) {
 	}
 
 	if op.Meta.Cwd != "" {
-		t.Errorf("Expected empty cwd, got '%s'", op.Meta.Cwd)
+		t.Errorf("Expected cwd '', got '%s'", op.Meta.Cwd)
 	}
 }
 
@@ -109,7 +110,7 @@ func TestRunWithEmptyCommand(t *testing.T) {
 }
 
 func TestNewExecState(t *testing.T) {
-	sourceOp := NewSourceOp("docker-image://alpine:3.19", nil)
+	sourceOp := NewSourceOp("docker-image://docker.io/library/alpine:3.19", nil)
 	sourceState := NewSourceState(sourceOp, "test.lua", 10)
 
 	execOp := NewExecOp([]string{"echo", "hello"}, nil)
@@ -292,5 +293,88 @@ func TestParseSecurityMode(t *testing.T) {
 		if result != tt.expected {
 			t.Errorf("parseSecurityMode(%q) = %v, expected %v", tt.input, result, tt.expected)
 		}
+	}
+}
+
+func TestMergeEnv(t *testing.T) {
+	tests := []struct {
+		name     string
+		imageEnv []string
+		userEnv  []string
+		expected []string
+	}{
+		{
+			name:     "empty image env",
+			imageEnv: []string{},
+			userEnv:  []string{"FOO=bar"},
+			expected: []string{"FOO=bar"},
+		},
+		{
+			name:     "empty user env",
+			imageEnv: []string{"PATH=/usr/bin", "HOME=/root"},
+			userEnv:  []string{},
+			expected: []string{"PATH=/usr/bin", "HOME=/root"},
+		},
+		{
+			name:     "merge env vars",
+			imageEnv: []string{"PATH=/usr/bin", "HOME=/root"},
+			userEnv:  []string{"FOO=bar"},
+			expected: []string{"PATH=/usr/bin", "HOME=/root", "FOO=bar"},
+		},
+		{
+			name:     "user env overrides image env",
+			imageEnv: []string{"PATH=/usr/bin", "FOO=old"},
+			userEnv:  []string{"FOO=new"},
+			expected: []string{"PATH=/usr/bin", "FOO=new"},
+		},
+		{
+			name:     "user env unsets variable",
+			imageEnv: []string{"PATH=/usr/bin", "FOO=bar"},
+			userEnv:  []string{"FOO"},
+			expected: []string{"PATH=/usr/bin"},
+		},
+		{
+			name:     "multiple overrides",
+			imageEnv: []string{"PATH=/usr/bin", "HOME=/root", "USER=root"},
+			userEnv:  []string{"PATH=/custom/path", "USER=nobody"},
+			expected: []string{"PATH=/custom/path", "HOME=/root", "USER=nobody"},
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			result := mergeEnv(tt.imageEnv, tt.userEnv)
+
+			// Convert both to sets for easier comparison (order doesn't matter)
+			resultSet := make(map[string]string)
+			for _, env := range result {
+				parts := []string{env, ""}
+				if idx := strings.Index(env, "="); idx > 0 {
+					parts[0] = env[:idx]
+					parts[1] = env[idx+1:]
+				}
+				resultSet[parts[0]] = parts[1]
+			}
+
+			expectedSet := make(map[string]string)
+			for _, env := range tt.expected {
+				parts := []string{env, ""}
+				if idx := strings.Index(env, "="); idx > 0 {
+					parts[0] = env[:idx]
+					parts[1] = env[idx+1:]
+				}
+				expectedSet[parts[0]] = parts[1]
+			}
+
+			if len(resultSet) != len(expectedSet) {
+				t.Errorf("Expected %d env vars, got %d", len(expectedSet), len(resultSet))
+			}
+
+			for k, v := range expectedSet {
+				if resultSet[k] != v {
+					t.Errorf("Expected %s=%s, got %s=%s", k, v, k, resultSet[k])
+				}
+			}
+		})
 	}
 }

@@ -130,7 +130,7 @@ func TestStateWithPlatform(t *testing.T) {
 		opNode := dag.NewOpNode(&pb.Op{
 			Op: &pb.Op_Source{
 				Source: &pb.SourceOp{
-					Identifier: "docker-image://ubuntu:24.04",
+					Identifier: "docker-image://docker.io/library/ubuntu:24.04",
 				},
 			},
 		}, "test.lua", 10)
@@ -168,7 +168,7 @@ func TestStateWithPlatform(t *testing.T) {
 		opNode := dag.NewOpNode(&pb.Op{
 			Op: &pb.Op_Source{
 				Source: &pb.SourceOp{
-					Identifier: "docker-image://ubuntu:24.04",
+					Identifier: "docker-image://docker.io/library/ubuntu:24.04",
 				},
 			},
 		}, "test.lua", 10)

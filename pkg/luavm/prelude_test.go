@@ -113,7 +113,7 @@ bk.export(base)
 				t.Fatal("Expected source operation")
 			}
 
-			expectedIdentifier := "docker-image://" + tc.expected
+			expectedIdentifier := "docker-image://docker.io/library/" + tc.expected
 			if sourceOp.Identifier != expectedIdentifier {
 				t.Errorf("Expected identifier '%s', got '%s'", expectedIdentifier, sourceOp.Identifier)
 			}

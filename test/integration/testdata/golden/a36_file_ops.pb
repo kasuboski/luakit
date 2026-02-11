@@ -1,49 +1,53 @@
 
-
-docker-image://alpine:3.19
+0.
+,docker-image://docker.io/library/alpine:3.19
 W
 I
-Gsha256:7551aa0f1fe889c2d2e03152c0e784283fd22f1abcc941425616bb8437aebdd3"
+Gsha256:bc08f217bb0d78e6387ff76155b3190f915a2dcb9ff101c8ddbcbe0b498f4a86"
 2
 /app
 w
 I
-Gsha256:5c0c7a919a8728a667fdc07af72fb63281c7deea0c32a2d3bef8f3b0785dcf1f"*(*&
+Gsha256:b5de91fbc298975ecbdc4feb595357eed172083ae3a6e2699928c66a7ffe32e6"*(*&
 /app/config.jsonÑ{"key":"value"}
 c
 I
-Gsha256:21e6777dbbcb91d460227edc4413b090fa085de5e3db2b0ea65137d22ca6f420":
+Gsha256:12d2b18a5094c8b20d4d6786b4cd3324c6f5a5e1fc0f5d9b1322e547f1dafc83":
 /app/config.json
 t
 I
-Gsha256:68bd45784f9f35f59f100416b9f29400b97a1a25c1dec087de4e4edd0217b231"'%B#
-/usr/bin/python3/usr/bin/pythonñ
+Gsha256:d06f7f969675f7f30e9650b21316306d3ea0dbf93ae33b6621bfd7b2e6b6df52"'%B#
+/usr/bin/python3/usr/bin/python
+K
+I
+Gsha256:4f2b7df658603b49265287f3dbc6c6dc2a39f4237355e139d822de28ce93198e˚
 W
-Gsha256:973cca93fae8355a719e5faa02dde2c36c63467f8847f55905126125c52634c8
+Gsha256:d06f7f969675f7f30e9650b21316306d3ea0dbf93ae33b6621bfd7b2e6b6df52
 
 
 
 W
-Gsha256:68bd45784f9f35f59f100416b9f29400b97a1a25c1dec087de4e4edd0217b231
+Gsha256:12d2b18a5094c8b20d4d6786b4cd3324c6f5a5e1fc0f5d9b1322e547f1dafc83
 
 
 
 W
-Gsha256:21e6777dbbcb91d460227edc4413b090fa085de5e3db2b0ea65137d22ca6f420
+Gsha256:b5de91fbc298975ecbdc4feb595357eed172083ae3a6e2699928c66a7ffe32e6
 
 
 
 W
-Gsha256:5c0c7a919a8728a667fdc07af72fb63281c7deea0c32a2d3bef8f3b0785dcf1f
+Gsha256:bc08f217bb0d78e6387ff76155b3190f915a2dcb9ff101c8ddbcbe0b498f4a86
 
 
 
 W
-Gsha256:7551aa0f1fe889c2d2e03152c0e784283fd22f1abcc941425616bb8437aebdd3
+Gsha256:4f2b7df658603b49265287f3dbc6c6dc2a39f4237355e139d822de28ce93198e
 
 
-÷
-L/Users/josh/projects/luakit/test/integration/golden_scripts/a36_file_ops.luaÄlocal base = bk.image("alpine:3.19")
+ª
+0test/integration/golden_scripts/a36_file_ops.luaÅ
+local base = bk.image("alpine:3.19")
 local s1 = base:mkdir("/app")
 local s2 = s1:mkfile("/app/config.json", '{"key":"value"}', { mode = 0644 })
 local s3 = s2:rm("/app/config.json")

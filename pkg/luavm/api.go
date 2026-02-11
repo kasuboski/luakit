@@ -56,13 +56,15 @@ func bkImage(L *lua.LState) int {
 	}
 
 	var platform *pb.Platform
+	var imageOpts *ops.ImageOptions
 	if L.GetTop() >= 2 {
 		opts := L.CheckTable(2)
 		platform = parsePlatform(L, opts)
+		imageOpts = parseImageOptions(L, opts)
 	}
 
 	file, line := getCallSite(L)
-	state := ops.Image(ref, file, line, platform)
+	state := ops.Image(ref, file, line, platform, imageOpts)
 	if state == nil {
 		L.RaiseError("bk.image: failed to create image state")
 		return 0
@@ -398,6 +400,21 @@ func parseLocalOptions(L *lua.LState, opts *lua.LTable) *ops.LocalOptions {
 	}
 
 	return localOpts
+}
+
+func parseImageOptions(L *lua.LState, opts *lua.LTable) *ops.ImageOptions {
+	imageOpts := &ops.ImageOptions{}
+
+	if platformVal := L.GetField(opts, "platform"); platformVal.Type() == lua.LTString {
+		imageOpts.Platform = platformVal.String()
+	}
+
+	if resolveDigestVal := L.GetField(opts, "resolve_digest"); resolveDigestVal.Type() == lua.LTBool {
+		imageOpts.ResolveDigest = bool(resolveDigestVal.(lua.LBool))
+		fmt.Printf("[DEBUG] Parsed resolve_digest=%v\n", imageOpts.ResolveDigest)
+	}
+
+	return imageOpts
 }
 
 func parseGitOptions(L *lua.LState, opts *lua.LTable) *ops.GitOptions {

@@ -23,8 +23,8 @@ func TestSerializeSingleNode(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 1 {
-		t.Errorf("Expected 1 op in definition, got %d", len(def.Def))
+	if len(def.Def) != 2 {
+		t.Errorf("Expected 2 ops in definition, got %d", len(def.Def))
 	}
 
 	var unmarshaledOp pb.Op
@@ -120,8 +120,8 @@ func TestSerializeWithDependencies(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 2 {
-		t.Errorf("Expected 2 ops in definition, got %d", len(def.Def))
+	if len(def.Def) != 3 {
+		t.Errorf("Expected 3 ops in definition, got %d", len(def.Def))
 	}
 
 	var unmarshaledExecOp pb.Op
@@ -186,8 +186,8 @@ func TestSerializeMultipleOutputs(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 2 {
-		t.Errorf("Expected 2 ops in definition, got %d", len(def.Def))
+	if len(def.Def) != 3 {
+		t.Errorf("Expected 3 ops in definition, got %d", len(def.Def))
 	}
 
 	var unmarshaledCopyOp pb.Op
@@ -297,8 +297,8 @@ func TestSerializeDAG(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 3 {
-		t.Errorf("Expected 3 ops in definition, got %d", len(def.Def))
+	if len(def.Def) != 4 {
+		t.Errorf("Expected 4 ops in definition, got %d", len(def.Def))
 	}
 
 	digests := make(map[string]bool)
@@ -314,8 +314,8 @@ func TestSerializeDAG(t *testing.T) {
 		}
 	}
 
-	if len(digests) != 2 {
-		t.Errorf("Expected 2 unique input digests, got %d", len(digests))
+	if len(digests) != 3 {
+		t.Errorf("Expected 3 unique input digests, got %d", len(digests))
 	}
 }
 
@@ -449,8 +449,8 @@ func TestSerializeExecWithCacheMount(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 2 {
-		t.Errorf("Expected 2 ops in definition, got %d", len(def.Def))
+	if len(def.Def) != 3 {
+		t.Errorf("Expected 3 ops in definition, got %d", len(def.Def))
 	}
 
 	var unmarshaledExecOp *pb.Op
@@ -798,8 +798,8 @@ func TestSerializeWithCustomDescription(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 1 {
-		t.Errorf("Expected 1 op in definition, got %d", len(def.Def))
+	if len(def.Def) != 2 {
+		t.Errorf("Expected 2 ops in definition, got %d", len(def.Def))
 	}
 
 	digest := node.Digest()
@@ -846,8 +846,8 @@ func TestSerializeWithBothMetadata(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 1 {
-		t.Errorf("Expected 1 op in definition, got %d", len(def.Def))
+	if len(def.Def) != 2 {
+		t.Errorf("Expected 2 ops in definition, got %d", len(def.Def))
 	}
 
 	digest := node.Digest()

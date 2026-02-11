@@ -1,29 +1,33 @@
 
-
-docker-image://alpine:3.19
-ÿ
+0.
+,docker-image://docker.io/library/alpine:3.19
+›
 I
-Gsha256:7551aa0f1fe889c2d2e03152c0e784283fd22f1abcc941425616bb8437aebdd3ä
+Gsha256:bc08f217bb0d78e6387ff76155b3190f915a2dcb9ff101c8ddbcbe0b498f4a86è
 
 /bin/sh
 -c
-npm ci
+npm ci/
 /root/.npm0¢
 	npm-cache#/run/secrets/npmrc0™
 
 npmrc Ä/run/ssh0≤
-default Ä/tmp0öÄÄÄÄ»
+default Ä/tmp0öÄÄÄÄ
+K
+I
+Gsha256:ac51c21606be8e7322fa2c0724921dd653b692de2bb1509dec447108eee1ff0d≠
 W
-Gsha256:3385bc520e8604b535102ba174616e36901cc378a22468a3208e76f4cc00ea73
+Gsha256:ac51c21606be8e7322fa2c0724921dd653b692de2bb1509dec447108eee1ff0d
 
 
-
+
 W
-Gsha256:7551aa0f1fe889c2d2e03152c0e784283fd22f1abcc941425616bb8437aebdd3
+Gsha256:bc08f217bb0d78e6387ff76155b3190f915a2dcb9ff101c8ddbcbe0b498f4a86
 
 
-ì
-O/Users/josh/projects/luakit/test/integration/golden_scripts/a34_exec_mounts.lua∫local base = bk.image("alpine:3.19")
+¯
+3test/integration/golden_scripts/a34_exec_mounts.luaª
+local base = bk.image("alpine:3.19")
 local result = base:run("npm ci", {
     mounts = {
         bk.cache("/root/.npm", { id = "npm-cache" }),

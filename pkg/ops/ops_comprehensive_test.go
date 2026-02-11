@@ -37,7 +37,7 @@ func TestImageValidation(t *testing.T) {
 
 	for _, tc := range testCases {
 		t.Run(tc.name, func(t *testing.T) {
-			state := Image(tc.ref, "test.lua", 1, nil)
+			state := Image(tc.ref, "test.lua", 1, nil, nil)
 			if tc.shouldError {
 				if state != nil {
 					t.Errorf("Expected nil state, got non-nil")
@@ -91,7 +91,7 @@ func TestLocalValidation(t *testing.T) {
 }
 
 func TestRunValidation(t *testing.T) {
-	state := Image("alpine:3.19", "test.lua", 1, nil)
+	state := Image("alpine:3.19", "test.lua", 1, nil, nil)
 
 	testCases := []struct {
 		name        string
@@ -137,7 +137,7 @@ func TestRunValidation(t *testing.T) {
 }
 
 func TestCopyValidation(t *testing.T) {
-	state := Image("alpine:3.19", "test.lua", 1, nil)
+	state := Image("alpine:3.19", "test.lua", 1, nil, nil)
 
 	testCases := []struct {
 		name        string
@@ -182,7 +182,7 @@ func TestCopyValidation(t *testing.T) {
 }
 
 func TestMkdirValidation(t *testing.T) {
-	state := Image("alpine:3.19", "test.lua", 1, nil)
+	state := Image("alpine:3.19", "test.lua", 1, nil, nil)
 
 	testCases := []struct {
 		name        string
@@ -223,7 +223,7 @@ func TestMkdirValidation(t *testing.T) {
 }
 
 func TestMkfileValidation(t *testing.T) {
-	state := Image("alpine:3.19", "test.lua", 1, nil)
+	state := Image("alpine:3.19", "test.lua", 1, nil, nil)
 
 	testCases := []struct {
 		name        string
@@ -268,7 +268,7 @@ func TestMkfileValidation(t *testing.T) {
 }
 
 func TestRmValidation(t *testing.T) {
-	state := Image("alpine:3.19", "test.lua", 1, nil)
+	state := Image("alpine:3.19", "test.lua", 1, nil, nil)
 
 	testCases := []struct {
 		name        string
@@ -309,7 +309,7 @@ func TestRmValidation(t *testing.T) {
 }
 
 func TestSymlinkValidation(t *testing.T) {
-	state := Image("alpine:3.19", "test.lua", 1, nil)
+	state := Image("alpine:3.19", "test.lua", 1, nil, nil)
 
 	testCases := []struct {
 		name        string
@@ -354,8 +354,8 @@ func TestSymlinkValidation(t *testing.T) {
 }
 
 func TestMergeValidation(t *testing.T) {
-	s1 := Image("alpine:3.19", "test.lua", 1, nil)
-	s2 := Image("ubuntu:24.04", "test.lua", 2, nil)
+	s1 := Image("alpine:3.19", "test.lua", 1, nil, nil)
+	s2 := Image("ubuntu:24.04", "test.lua", 2, nil, nil)
 
 	testCases := []struct {
 		name        string
@@ -401,7 +401,7 @@ func TestMergeValidation(t *testing.T) {
 }
 
 func TestDiffValidation(t *testing.T) {
-	s1 := Image("alpine:3.19", "test.lua", 1, nil)
+	s1 := Image("alpine:3.19", "test.lua", 1, nil, nil)
 	s2 := Run(s1, []string{"echo"}, nil, "test.lua", 2)
 
 	testCases := []struct {
@@ -447,7 +447,7 @@ func TestDiffValidation(t *testing.T) {
 }
 
 func TestExecOptions(t *testing.T) {
-	state := Image("alpine:3.19", "test.lua", 1, nil)
+	state := Image("alpine:3.19", "test.lua", 1, nil, nil)
 
 	testCases := []struct {
 		name   string
@@ -538,7 +538,7 @@ func TestExecOptions(t *testing.T) {
 }
 
 func TestCopyOptions(t *testing.T) {
-	state := Image("alpine:3.19", "test.lua", 1, nil)
+	state := Image("alpine:3.19", "test.lua", 1, nil, nil)
 
 	testCases := []struct {
 		name   string
@@ -678,7 +678,7 @@ func TestCopyOptions(t *testing.T) {
 }
 
 func TestMkdirOptions(t *testing.T) {
-	state := Image("alpine:3.19", "test.lua", 1, nil)
+	state := Image("alpine:3.19", "test.lua", 1, nil, nil)
 
 	testCases := []struct {
 		name   string
@@ -760,7 +760,7 @@ func TestMkdirOptions(t *testing.T) {
 }
 
 func TestMkfileOptions(t *testing.T) {
-	state := Image("alpine:3.19", "test.lua", 1, nil)
+	state := Image("alpine:3.19", "test.lua", 1, nil, nil)
 
 	testCases := []struct {
 		name   string
@@ -828,7 +828,7 @@ func TestMkfileOptions(t *testing.T) {
 }
 
 func TestRmOptions(t *testing.T) {
-	state := Image("alpine:3.19", "test.lua", 1, nil)
+	state := Image("alpine:3.19", "test.lua", 1, nil, nil)
 
 	testCases := []struct {
 		name   string
@@ -996,7 +996,7 @@ func TestIdentifiers(t *testing.T) {
 }
 
 func TestStateChaining(t *testing.T) {
-	base := Image("alpine:3.19", "test.lua", 1, nil)
+	base := Image("alpine:3.19", "test.lua", 1, nil, nil)
 	s1 := Mkdir(base, "/app", nil, "test.lua", 2)
 	s2 := Mkdir(s1, "/app/data", nil, "test.lua", 3)
 	s3 := Mkfile(s2, "/app/config.json", "{}", nil, "test.lua", 4)
@@ -1021,7 +1021,7 @@ func TestStateChaining(t *testing.T) {
 }
 
 func TestComplexDAGConstruction(t *testing.T) {
-	base := Image("golang:1.22", "build.lua", 1, nil)
+	base := Image("golang:1.22", "build.lua", 1, nil, nil)
 	deps := Run(base, []string{"go", "mod", "download"},
 		&ExecOptions{Cwd: "/app"}, "build.lua", 2)
 

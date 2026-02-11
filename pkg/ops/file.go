@@ -98,6 +98,8 @@ func NewCopyFileState(state *dag.State, fromState *dag.State, src, dest string, 
 	}
 
 	action := &pb.FileAction{
+		Input:          1, // Destination is second input
+		SecondaryInput: 0, // Source is first input
 		Action: &pb.FileAction_Copy{
 			Copy: copyAction,
 		},
@@ -107,12 +109,12 @@ func NewCopyFileState(state *dag.State, fromState *dag.State, src, dest string, 
 	pbOp := &pb.Op{
 		Inputs: []*pb.Input{
 			{
-				Digest: string(state.Op().Digest()),
-				Index:  int64(state.OutputIndex()),
-			},
-			{
 				Digest: string(fromState.Op().Digest()),
 				Index:  int64(fromState.OutputIndex()),
+			},
+			{
+				Digest: string(state.Op().Digest()),
+				Index:  int64(state.OutputIndex()),
 			},
 		},
 		Op: &pb.Op_File{
@@ -121,8 +123,8 @@ func NewCopyFileState(state *dag.State, fromState *dag.State, src, dest string, 
 	}
 
 	node := dag.NewOpNode(pbOp, luaFile, luaLine)
-	node.AddInput(dag.NewEdge(state.Op(), state.OutputIndex()))
 	node.AddInput(dag.NewEdge(fromState.Op(), fromState.OutputIndex()))
+	node.AddInput(dag.NewEdge(state.Op(), state.OutputIndex()))
 
 	return dag.NewState(node)
 }

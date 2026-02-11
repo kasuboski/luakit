@@ -21,7 +21,7 @@ func TestNewSourceOp(t *testing.T) {
 }
 
 func TestImage(t *testing.T) {
-	state := Image("alpine:3.19", "test.lua", 10, nil)
+	state := Image("alpine:3.19", "test.lua", 10, nil, nil)
 
 	if state == nil {
 		t.Fatal("Expected non-nil state")
@@ -44,14 +44,14 @@ func TestImage(t *testing.T) {
 		t.Fatal("Expected SourceOp")
 	}
 
-	expectedIdentifier := "docker-image://alpine:3.19"
+	expectedIdentifier := "docker-image://docker.io/library/alpine:3.19"
 	if sourceOp.Identifier != expectedIdentifier {
 		t.Errorf("Expected identifier '%s', got '%s'", expectedIdentifier, sourceOp.Identifier)
 	}
 }
 
 func TestImageWithPrefix(t *testing.T) {
-	state := Image("docker-image://alpine:3.19", "test.lua", 10, nil)
+	state := Image("docker-image://alpine:3.19", "test.lua", 10, nil, nil)
 
 	if state == nil {
 		t.Fatal("Expected non-nil state")
@@ -68,7 +68,7 @@ func TestImageWithPlatform(t *testing.T) {
 		OS:           "linux",
 		Architecture: "arm64",
 	}
-	state := Image("alpine:3.19", "test.lua", 10, platform)
+	state := Image("alpine:3.19", "test.lua", 10, platform, nil)
 
 	if state.Platform() == nil {
 		t.Fatal("Expected non-nil platform")
@@ -84,7 +84,7 @@ func TestImageWithPlatform(t *testing.T) {
 }
 
 func TestImageEmptyRef(t *testing.T) {
-	state := Image("", "test.lua", 10, nil)
+	state := Image("", "test.lua", 10, nil, nil)
 
 	if state != nil {
 		t.Error("Expected nil state for empty ref")
@@ -322,7 +322,7 @@ func TestValidateLocalName(t *testing.T) {
 
 func TestNewSourceState(t *testing.T) {
 	op := &pb.SourceOp{
-		Identifier: "docker-image://alpine:3.19",
+		Identifier: "docker-image://docker.io/library/alpine:3.19",
 	}
 	state := NewSourceState(op, "test.lua", 10)
 
@@ -347,8 +347,8 @@ func TestNewSourceState(t *testing.T) {
 		t.Fatal("Expected SourceOp")
 	}
 
-	if sourceOp.Identifier != "docker-image://alpine:3.19" {
-		t.Errorf("Expected identifier 'docker-image://alpine:3.19', got '%s'", sourceOp.Identifier)
+	if sourceOp.Identifier != "docker-image://docker.io/library/alpine:3.19" {
+		t.Errorf("Expected identifier 'docker-image://docker.io/library/alpine:3.19', got '%s'", sourceOp.Identifier)
 	}
 }
 

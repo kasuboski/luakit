@@ -13,7 +13,7 @@ import (
 func BenchmarkDAGConstructionSimple(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		base := ops.Image("alpine:3.19", "test.lua", 1, nil)
+		base := ops.Image("alpine:3.19", "test.lua", 1, nil, nil)
 		result := ops.Run(base, []string{"/bin/sh", "-c", "echo hello"}, nil, "test.lua", 2)
 		_ = result
 	}
@@ -22,7 +22,7 @@ func BenchmarkDAGConstructionSimple(b *testing.B) {
 func BenchmarkDAGConstruction50Ops(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		base := ops.Image("alpine:3.19", "test.lua", 1, nil)
+		base := ops.Image("alpine:3.19", "test.lua", 1, nil, nil)
 		state := base
 		for j := range 50 {
 			state = ops.Run(state, []string{"/bin/sh", "-c", "echo test"}, nil, "test.lua", j+2)
@@ -34,7 +34,7 @@ func BenchmarkDAGConstruction50Ops(b *testing.B) {
 func BenchmarkDAGConstruction100Ops(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		base := ops.Image("alpine:3.19", "test.lua", 1, nil)
+		base := ops.Image("alpine:3.19", "test.lua", 1, nil, nil)
 		state := base
 		for j := range 100 {
 			state = ops.Run(state, []string{"/bin/sh", "-c", "echo test"}, nil, "test.lua", j+2)
@@ -46,7 +46,7 @@ func BenchmarkDAGConstruction100Ops(b *testing.B) {
 func BenchmarkDAGConstructionWithFileOps(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		base := ops.Image("alpine:3.19", "test.lua", 1, nil)
+		base := ops.Image("alpine:3.19", "test.lua", 1, nil, nil)
 		s1 := ops.Mkdir(base, "/app", nil, "test.lua", 2)
 		s2 := ops.Mkfile(s1, "/app/file.txt", "content", nil, "test.lua", 3)
 		s3 := ops.Symlink(s2, "/app/file.txt", "/app/link", "test.lua", 4)
@@ -57,11 +57,11 @@ func BenchmarkDAGConstructionWithFileOps(b *testing.B) {
 func BenchmarkDAGConstructionMultiStage(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		builder := ops.Image("golang:1.22", "test.lua", 1, nil)
+		builder := ops.Image("golang:1.22", "test.lua", 1, nil, nil)
 		src := ops.Local("context", "test.lua", 2, nil)
 		workspace := ops.Copy(builder, src, ".", "/app", nil, "test.lua", 3)
 		built := ops.Run(workspace, []string{"/bin/sh", "-c", "go build -o /out/server ./cmd/server"}, nil, "test.lua", 4)
-		runtime := ops.Image("gcr.io/distroless/static-debian12", "test.lua", 5, nil)
+		runtime := ops.Image("gcr.io/distroless/static-debian12", "test.lua", 5, nil, nil)
 		final := ops.Copy(runtime, built, "/out/server", "/server", nil, "test.lua", 6)
 		_ = final
 	}
@@ -70,7 +70,7 @@ func BenchmarkDAGConstructionMultiStage(b *testing.B) {
 func BenchmarkDAGConstructionMerge(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		base := ops.Image("alpine:3.19", "test.lua", 1, nil)
+		base := ops.Image("alpine:3.19", "test.lua", 1, nil, nil)
 		deps := ops.Run(base, []string{"/bin/sh", "-c", "apk add --no-cache git"}, nil, "test.lua", 2)
 		source := ops.Run(base, []string{"/bin/sh", "-c", "mkdir -p /app/src"}, nil, "test.lua", 3)
 		config := ops.Run(base, []string{"/bin/sh", "-c", "mkdir -p /app/config"}, nil, "test.lua", 4)
@@ -82,7 +82,7 @@ func BenchmarkDAGConstructionMerge(b *testing.B) {
 func BenchmarkDAGConstructionDiff(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
-		base := ops.Image("alpine:3.19", "test.lua", 1, nil)
+		base := ops.Image("alpine:3.19", "test.lua", 1, nil, nil)
 		installed := ops.Run(base, []string{"/bin/sh", "-c", "apk add --no-cache curl"}, nil, "test.lua", 2)
 		diffed := ops.Diff(base, installed, "test.lua", 3)
 		_ = diffed
@@ -90,7 +90,7 @@ func BenchmarkDAGConstructionDiff(b *testing.B) {
 }
 
 func BenchmarkSerializeSimpleDAG(b *testing.B) {
-	base := ops.Image("alpine:3.19", "test.lua", 1, nil)
+	base := ops.Image("alpine:3.19", "test.lua", 1, nil, nil)
 	result := ops.Run(base, []string{"/bin/sh", "-c", "echo hello"}, nil, "test.lua", 2)
 
 	b.ResetTimer()
@@ -104,7 +104,7 @@ func BenchmarkSerializeSimpleDAG(b *testing.B) {
 }
 
 func BenchmarkSerialize50OpsDAG(b *testing.B) {
-	base := ops.Image("alpine:3.19", "test.lua", 1, nil)
+	base := ops.Image("alpine:3.19", "test.lua", 1, nil, nil)
 	state := base
 	for j := range 50 {
 		state = ops.Run(state, []string{"/bin/sh", "-c", "echo test"}, nil, "test.lua", j+2)
@@ -121,7 +121,7 @@ func BenchmarkSerialize50OpsDAG(b *testing.B) {
 }
 
 func BenchmarkSerialize100OpsDAG(b *testing.B) {
-	base := ops.Image("alpine:3.19", "test.lua", 1, nil)
+	base := ops.Image("alpine:3.19", "test.lua", 1, nil, nil)
 	state := base
 	for j := range 100 {
 		state = ops.Run(state, []string{"/bin/sh", "-c", "echo test"}, nil, "test.lua", j+2)
@@ -138,7 +138,7 @@ func BenchmarkSerialize100OpsDAG(b *testing.B) {
 }
 
 func BenchmarkSerializeWithSourceMaps(b *testing.B) {
-	base := ops.Image("alpine:3.19", "test.lua", 1, nil)
+	base := ops.Image("alpine:3.19", "test.lua", 1, nil, nil)
 	result := ops.Run(base, []string{"/bin/sh", "-c", "echo hello"}, nil, "test.lua", 2)
 
 	sourceFiles := map[string][]byte{
@@ -158,7 +158,7 @@ func BenchmarkSerializeWithSourceMaps(b *testing.B) {
 }
 
 func BenchmarkSerializeWithImageConfig(b *testing.B) {
-	base := ops.Image("alpine:3.19", "test.lua", 1, nil)
+	base := ops.Image("alpine:3.19", "test.lua", 1, nil, nil)
 	result := ops.Run(base, []string{"/bin/sh", "-c", "echo hello"}, nil, "test.lua", 2)
 
 	imageConfig := &dockerspec.DockerOCIImage{}
@@ -196,7 +196,7 @@ func BenchmarkDigestComputation(b *testing.B) {
 }
 
 func BenchmarkWalkDAG(b *testing.B) {
-	base := ops.Image("alpine:3.19", "test.lua", 1, nil)
+	base := ops.Image("alpine:3.19", "test.lua", 1, nil, nil)
 	state := base
 	for j := range 50 {
 		state = ops.Run(state, []string{"/bin/sh", "-c", "echo test"}, nil, "test.lua", j+2)
@@ -239,7 +239,7 @@ func walkDAG(node *dag.OpNode, visited map[string]bool, def *pb.Definition, smb 
 }
 
 func BenchmarkEdgeCreation(b *testing.B) {
-	base := ops.Image("alpine:3.19", "test.lua", 1, nil)
+	base := ops.Image("alpine:3.19", "test.lua", 1, nil, nil)
 
 	b.ResetTimer()
 	b.ReportAllocs()
@@ -250,7 +250,7 @@ func BenchmarkEdgeCreation(b *testing.B) {
 }
 
 func BenchmarkStateCreation(b *testing.B) {
-	base := ops.Image("alpine:3.19", "test.lua", 1, nil)
+	base := ops.Image("alpine:3.19", "test.lua", 1, nil, nil)
 
 	b.ResetTimer()
 	b.ReportAllocs()

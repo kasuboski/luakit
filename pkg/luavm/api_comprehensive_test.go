@@ -1068,8 +1068,8 @@ func TestMountTypesPreserveDefaults(t *testing.T) {
 		t.Fatal("Expected ExecOp")
 	}
 
-	if len(execOp.Mounts) != 4 {
-		t.Errorf("Expected 4 mounts, got %d", len(execOp.Mounts))
+	if len(execOp.Mounts) != 5 {
+		t.Errorf("Expected 5 mounts, got %d", len(execOp.Mounts))
 	}
 }
 

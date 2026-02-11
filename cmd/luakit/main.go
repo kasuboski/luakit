@@ -9,6 +9,7 @@ import (
 	"github.com/kasuboski/luakit/pkg/dag"
 	"github.com/kasuboski/luakit/pkg/luavm"
 	"github.com/kasuboski/luakit/pkg/output"
+	"github.com/kasuboski/luakit/pkg/resolver"
 	pb "github.com/moby/buildkit/solver/pb"
 )
 
@@ -201,9 +202,11 @@ func handleBuild() {
 	}
 
 	var def *pb.Definition
+	reslv := resolver.NewResolver()
 	def, err = dag.Serialize(result.State, &dag.SerializeOptions{
 		ImageConfig: result.ImageConfig,
 		SourceFiles: result.SourceFiles,
+		Resolver:    reslv,
 	})
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "error: failed to serialize definition: %v\n", err)

@@ -31,7 +31,7 @@ func TestNewDiffOp(t *testing.T) {
 
 func TestDiff(t *testing.T) {
 	lowerState := Scratch()
-	upperState := Image("alpine:3.19", "test.lua", 5, nil)
+	upperState := Image("alpine:3.19", "test.lua", 5, nil, nil)
 
 	result := Diff(lowerState, upperState, "test.lua", 10)
 
@@ -91,7 +91,7 @@ func TestDiffWithNilUpper(t *testing.T) {
 
 func TestNewDiffState(t *testing.T) {
 	lowerState := Scratch()
-	upperState := Image("alpine:3.19", "test.lua", 5, nil)
+	upperState := Image("alpine:3.19", "test.lua", 5, nil, nil)
 
 	result := NewDiffState(lowerState, upperState, "test.lua", 20)
 

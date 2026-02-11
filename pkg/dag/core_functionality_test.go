@@ -66,8 +66,8 @@ func TestSerializeMergeWithMultipleInputs(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 6 {
-		t.Errorf("Expected 6 ops (5 sources + 1 merge), got %d", len(def.Def))
+	if len(def.Def) != 7 {
+		t.Errorf("Expected 7 ops (5 sources + 1 merge), got %d", len(def.Def))
 	}
 }
 
@@ -114,8 +114,8 @@ func TestSerializeDiffOperation(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 3 {
-		t.Errorf("Expected 3 ops, got %d", len(def.Def))
+	if len(def.Def) != 4 {
+		t.Errorf("Expected 4 ops, got %d", len(def.Def))
 	}
 
 	var foundDiffOp bool
@@ -221,8 +221,8 @@ func TestSerializeDeepChain(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 20 {
-		t.Errorf("Expected 20 ops in definition, got %d", len(def.Def))
+	if len(def.Def) != 21 {
+		t.Errorf("Expected 21 ops in definition, got %d", len(def.Def))
 	}
 }
 
@@ -275,12 +275,12 @@ func TestSerializeDAGWithMultipleOutputs(t *testing.T) {
 		t.Fatalf("Failed to serialize state1: %v", err)
 	}
 
-	if len(def0.Def) != 2 {
-		t.Errorf("Expected 2 ops in def0, got %d", len(def0.Def))
+	if len(def0.Def) != 3 {
+		t.Errorf("Expected 3 ops in def0, got %d", len(def0.Def))
 	}
 
-	if len(def1.Def) != 2 {
-		t.Errorf("Expected 2 ops in def1, got %d", len(def1.Def))
+	if len(def1.Def) != 3 {
+		t.Errorf("Expected 3 ops in def1, got %d", len(def1.Def))
 	}
 }
 
@@ -341,8 +341,8 @@ func TestSerializeDiamondDAG(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 4 {
-		t.Errorf("Expected 4 ops in diamond DAG, got %d", len(def.Def))
+	if len(def.Def) != 5 {
+		t.Errorf("Expected 5 ops in diamond DAG, got %d", len(def.Def))
 	}
 }
 
@@ -425,8 +425,8 @@ func TestSerializeWithAllMountOptions(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 2 {
-		t.Errorf("Expected 2 ops, got %d", len(def.Def))
+	if len(def.Def) != 3 {
+		t.Errorf("Expected 3 ops, got %d", len(def.Def))
 	}
 
 	var foundExecOp bool
@@ -474,8 +474,8 @@ func TestSerializeWithNilOptions(t *testing.T) {
 		t.Error("Expected non-nil definition")
 	}
 
-	if len(def.Def) != 1 {
-		t.Errorf("Expected 1 op, got %d", len(def.Def))
+	if len(def.Def) != 2 {
+		t.Errorf("Expected 2 ops, got %d", len(def.Def))
 	}
 }
 
@@ -529,8 +529,8 @@ func TestSerializeWithVeryLongIdentifiers(t *testing.T) {
 		t.Fatalf("Failed to serialize with long identifier: %v", err)
 	}
 
-	if len(def.Def) != 1 {
-		t.Errorf("Expected 1 op, got %d", len(def.Def))
+	if len(def.Def) != 2 {
+		t.Errorf("Expected 2 ops, got %d", len(def.Def))
 	}
 
 	var unmarshaledOp pb.Op

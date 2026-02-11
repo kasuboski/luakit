@@ -149,9 +149,9 @@ func TestGitMultiStageWithGitSource(t *testing.T) {
 		t.Fatal("Expected at least 1 input to FileOp")
 	}
 
-	imageState := state.Op().Inputs()[0].Node()
-	imageSourceOp := imageState.Op().GetSource()
-	if imageSourceOp == nil {
+	gitState := state.Op().Inputs()[0].Node()
+	gitSourceOp := gitState.Op().GetSource()
+	if gitSourceOp == nil {
 		t.Fatal("Expected SourceOp as first input to FileOp")
 	}
 
@@ -159,9 +159,9 @@ func TestGitMultiStageWithGitSource(t *testing.T) {
 		t.Fatal("Expected at least 2 inputs to FileOp")
 	}
 
-	gitState := state.Op().Inputs()[1].Node()
-	gitSourceOp := gitState.Op().GetSource()
-	if gitSourceOp == nil {
+	imageState := state.Op().Inputs()[1].Node()
+	imageSourceOp := imageState.Op().GetSource()
+	if imageSourceOp == nil {
 		t.Fatal("Expected SourceOp as second input to FileOp")
 	}
 

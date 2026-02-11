@@ -20,7 +20,7 @@ bk.export(base)
 	pbDef := requireValidDefinition(t, def)
 
 	requireSourceOpCount(t, pbDef, 1)
-	requireSourceIdentifier(t, pbDef, "docker-image://ubuntu:24.04")
+	requireSourceIdentifier(t, pbDef, "docker-image://docker.io/library/ubuntu:24.04")
 }
 
 func TestA02_ImageSourceWithPlatformOverride(t *testing.T) {
@@ -72,17 +72,21 @@ bk.export(bk.scratch())
 
 	pbDef := requireValidDefinition(t, def)
 
-	require.Equal(t, 1, len(pbDef.Def), "should have exactly 1 op")
+	require.Equal(t, 2, len(pbDef.Def), "should have exactly 2 ops (scratch source + empty exec)")
 	requireSourceOpCount(t, pbDef, 1)
 
+	foundSource := false
 	for _, opBytes := range pbDef.Def {
 		var op pb.Op
 		require.NoError(t, op.UnmarshalVT(opBytes))
 		source := op.GetSource()
-		require.NotNil(t, source, "should be a source op")
-		identifier := source.GetIdentifier()
-		require.True(t, identifier == "" || identifier == "scratch", "scratch identifier should be empty or 'scratch'")
+		if source != nil {
+			foundSource = true
+			identifier := source.GetIdentifier()
+			require.True(t, identifier == "" || identifier == "scratch", "scratch identifier should be empty or 'scratch'")
+		}
 	}
+	require.True(t, foundSource, "should have found a source op")
 }
 
 func TestA05_LocalSourceWithFilters(t *testing.T) {

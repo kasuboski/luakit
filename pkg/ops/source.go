@@ -33,6 +33,11 @@ type HTTPOptions struct {
 	Password string
 }
 
+type ImageOptions struct {
+	Platform      string
+	ResolveDigest bool
+}
+
 const (
 	dockerImagePrefix = "docker-image://"
 	localPrefix       = "local://"
@@ -57,7 +62,7 @@ func NewSourceState(op *pb.SourceOp, luaFile string, luaLine int) *dag.State {
 	return dag.NewState(node)
 }
 
-func Image(ref string, luaFile string, luaLine int, platform *pb.Platform) *dag.State {
+func Image(ref string, luaFile string, luaLine int, platform *pb.Platform, opts *ImageOptions) *dag.State {
 	if ref == "" {
 		return nil
 	}
@@ -69,7 +74,12 @@ func Image(ref string, luaFile string, luaLine int, platform *pb.Platform) *dag.
 
 	identifier := ref
 	if !hasPrefix(ref, dockerImagePrefix) {
-		identifier = dockerImagePrefix + ref
+		normalizedRef, err := reference.ParseNormalizedNamed(ref)
+		if err != nil {
+			identifier = dockerImagePrefix + ref
+		} else {
+			identifier = dockerImagePrefix + normalizedRef.String()
+		}
 	}
 
 	op := NewSourceOp(identifier, nil)
@@ -77,6 +87,14 @@ func Image(ref string, luaFile string, luaLine int, platform *pb.Platform) *dag.
 
 	if platform != nil {
 		state = state.WithPlatform(platform)
+	}
+
+	// Default to resolving digest (true if nil, or user-specified value)
+	resolveDigest := opts == nil || opts.ResolveDigest
+	if resolveDigest {
+		// Set resolveConfig on the OpNode itself
+		opNode := state.Op()
+		opNode.SetResolveConfig(true)
 	}
 
 	return state

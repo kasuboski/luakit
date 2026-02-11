@@ -66,6 +66,81 @@ Build the image:
 luakit build build.lua | buildctl build --no-frontend --local context=.
 ```
 
+## BuildKit Daemon Setup
+
+Luakit requires BuildKit for executing builds. The BuildKit worker configuration is important for compatibility, especially when running in virtualized environments like Lima.
+
+### Lima VM (macOS with Docker Desktop)
+
+If using Lima with Docker Desktop, BuildKit's default `native` snapshotter may fail with permission errors due to Lima's FUSE/SSHFS filesystem sharing. Use the `overlayfs` snapshotter instead:
+
+```bash
+# Stop existing buildkitd container
+limactl shell docker
+docker stop buildkitd && docker rm buildkitd
+
+# Start buildkitd with overlayfs snapshotter
+docker run -d --name buildkitd \
+  -v /tmp/buildkit:/run/buildkit \
+  -v 69a02fc920b683a9a4ae556543230abb2d2dc387288d8dca3dfadf8b316fcc5a:/var/lib/buildkit \
+  moby/buildkit:buildx-stable-1 \
+  --addr unix:///run/buildkit/buildkitd.sock \
+  --oci-worker-snapshotter=overlayfs
+
+# Exit Lima shell
+exit
+```
+
+Set the BuildKit socket environment variable:
+
+```bash
+export BUILDKIT_HOST=unix://$HOME/.lima/docker/sock/buildkitd.sock
+```
+
+### Native Linux / Docker Desktop (Linux)
+
+Docker Desktop on Linux typically doesn't have the same filesystem restrictions, so BuildKit's default configuration should work:
+
+```bash
+# Verify BuildKit is running
+docker ps | grep buildkitd
+
+# If not running, start with defaults
+docker run -d --name buildkitd \
+  -v /tmp/buildkit:/run/buildkit \
+  moby/buildkit:buildx-stable-1
+```
+
+### Standalone BuildKit
+
+For standalone BuildKit installations:
+
+```bash
+# Using buildkitd from package manager
+buildkitd --oci-worker-snapshotter=overlayfs
+
+# Or via container
+docker run -d --name buildkitd \
+  -v /tmp/buildkit:/run/buildkit \
+  -v buildkit-data:/var/lib/buildkit \
+  moby/buildkit:buildx-stable-1 \
+  --addr unix:///run/buildkit/buildkitd.sock \
+  --oci-worker-snapshotter=overlayfs
+```
+
+### Why overlayfs?
+
+The `overlayfs` snapshotter:
+- Works reliably across different filesystem types
+- Supports recursive bind mounts used by BuildKit
+- Compatible with FUSE/SSHFS filesystems (Lima, Colima)
+- Provides good performance for container builds
+
+The `native` snapshotter can cause issues like:
+- `operation not permitted` errors during mount operations
+- `failed to mount /tmp/containerd-mount*` errors
+- Incompatibility with FUSE-based filesystems
+
 ## Two Ways to Use Luakit
 
 Luakit works in two modes:

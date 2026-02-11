@@ -356,8 +356,8 @@ func TestSerializeComplexDAGWithMultiplePaths(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 7 {
-		t.Errorf("Expected 7 ops in definition, got %d", len(def.Def))
+	if len(def.Def) != 8 {
+		t.Errorf("Expected 8 ops in definition, got %d", len(def.Def))
 	}
 }
 

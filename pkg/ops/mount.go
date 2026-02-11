@@ -7,6 +7,7 @@ import (
 )
 
 type Mount struct {
+	state *dag.State
 	mount *pb.Mount
 }
 
@@ -170,7 +171,7 @@ func BindMount(state *dag.State, dest string, opts *BindOptions) *Mount {
 	mountType := pb.MountType_BIND
 	input := int64(len(state.Op().Inputs()))
 
-	mount := &pb.Mount{
+	mountPb := &pb.Mount{
 		Input:     input,
 		Dest:      dest,
 		MountType: mountType,
@@ -179,13 +180,14 @@ func BindMount(state *dag.State, dest string, opts *BindOptions) *Mount {
 
 	if opts != nil {
 		if opts.Selector != "" {
-			mount.Selector = opts.Selector
+			mountPb.Selector = opts.Selector
 		}
-		mount.Readonly = opts.Readonly
+		mountPb.Readonly = opts.Readonly
 	}
 
 	return &Mount{
-		mount: mount,
+		mount: mountPb,
+		state: state,
 	}
 }
 

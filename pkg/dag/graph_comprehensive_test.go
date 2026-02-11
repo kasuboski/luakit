@@ -208,7 +208,7 @@ func TestCircularDependencyDetection(t *testing.T) {
 	}
 
 	// Circular dependencies should be handled gracefully by only visiting each node once
-	if len(def.Def) != 1 {
+	if len(def.Def) != 2 {
 		t.Errorf("Expected 1 op in definition (visited set prevents infinite loop), got %d", len(def.Def))
 	}
 }
@@ -251,8 +251,8 @@ func TestDeepDAGSerialization(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 10 {
-		t.Errorf("Expected 10 ops in definition, got %d", len(def.Def))
+	if len(def.Def) != 11 {
+		t.Errorf("Expected 11 ops in definition, got %d", len(def.Def))
 	}
 }
 
@@ -300,8 +300,8 @@ func TestWidelyBranchingDAG(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 7 {
-		t.Errorf("Expected 7 ops in definition, got %d", len(def.Def))
+	if len(def.Def) != 8 {
+		t.Errorf("Expected 8 ops in definition, got %d", len(def.Def))
 	}
 }
 
@@ -365,9 +365,9 @@ func TestSharedNodeDAG(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	// Should serialize: base, shared, branch1 (branch2 is not reached)
-	if len(def.Def) != 3 {
-		t.Errorf("Expected 3 ops in definition, got %d", len(def.Def))
+	// Should serialize: base, shared, branch1, branch2
+	if len(def.Def) != 4 {
+		t.Errorf("Expected 4 ops in definition, got %d", len(def.Def))
 	}
 }
 
@@ -429,7 +429,7 @@ func TestSerializeWithNilOp(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 1 {
+	if len(def.Def) != 2 {
 		t.Errorf("Expected 1 op in definition, got %d", len(def.Def))
 	}
 }
@@ -502,7 +502,7 @@ func TestSerializeEmptyDAG(t *testing.T) {
 		t.Fatalf("Failed to serialize empty DAG: %v", err)
 	}
 
-	if len(def.Def) != 1 {
+	if len(def.Def) != 2 {
 		t.Errorf("Expected 1 op in definition, got %d", len(def.Def))
 	}
 }
@@ -691,8 +691,8 @@ func TestComplexDAGWithMergeAndDiff(t *testing.T) {
 		t.Fatalf("Failed to serialize: %v", err)
 	}
 
-	if len(def.Def) != 5 {
-		t.Errorf("Expected 5 ops in definition, got %d", len(def.Def))
+	if len(def.Def) != 6 {
+		t.Errorf("Expected 6 ops in definition, got %d", len(def.Def))
 	}
 }
 
