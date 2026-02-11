@@ -1,0 +1,301 @@
+name: Docker Images
+
+on:
+  push:
+    branches: ['**']
+    tags: ['v*.*.*']
+  pull_request:
+    branches: [main, master]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  build-cli:
+    name: Build CLI Image (${{ matrix.platform }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push CLI image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.cli
+          platforms: ${{ matrix.platform }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            TARGETPLATFORM=${{ matrix.platform }}
+
+  build-gateway:
+    name: Build Gateway Image (${{ matrix.platform }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Build and push gateway image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+          build-args: |
+            TARGETPLATFORM=${{ matrix.platform }}
+
+  verify:
+    name: Verify Images (${{ matrix.platform }})
+    needs: [build-cli, build-gateway]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux/amd64, linux/arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Extract metadata for tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+      - name: Build gateway for verification
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: ${{ matrix.platform }}
+          load: true
+          tags: luakit:verify-${{ matrix.platform }}
+          cache-from: type=gha
+          provenance: false
+      - name: Build CLI for verification
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.cli
+          platforms: ${{ matrix.platform }}
+          load: true
+          tags: luakit-cli:verify-${{ matrix.platform }}
+          cache-from: type=gha
+          provenance: false
+      - name: Verify binary architecture and static linking
+        run: |
+          # Verify gateway binary
+          TEMP_DIR=$(mktemp -d)
+          CONTAINER_ID=$(docker create "luakit:verify-${{ matrix.platform }}")
+          docker cp "$CONTAINER_ID:/luakit" "$TEMP_DIR/gateway-binary"
+          docker rm "$CONTAINER_ID"
+          
+          FILE_OUTPUT=$(file "$TEMP_DIR/gateway-binary")
+          echo "Gateway binary info: $FILE_OUTPUT"
+          
+          case "${{ matrix.platform }}" in
+            "linux/amd64")
+              if echo "$FILE_OUTPUT" | grep -q "x86-64"; then
+                echo "✓ Gateway: Binary is x86-64 for ${{ matrix.platform }}"
+              else
+                echo "✗ Gateway: Binary is not x86-64 for ${{ matrix.platform }}"
+                exit 1
+              fi
+              ;;
+            "linux/arm64")
+              if echo "$FILE_OUTPUT" | grep -q "aarch64"; then
+                echo "✓ Gateway: Binary is aarch64 for ${{ matrix.platform }}"
+              else
+                echo "✗ Gateway: Binary is not aarch64 for ${{ matrix.platform }}"
+                exit 1
+              fi
+              ;;
+          esac
+          
+          if echo "$FILE_OUTPUT" | grep -q "statically linked"; then
+            echo "✓ Gateway: Binary is statically linked"
+          else
+            echo "✗ Gateway: Binary is not statically linked"
+            exit 1
+          fi
+          
+          # Verify CLI binary
+          CLI_CONTAINER=$(docker create "luakit-cli:verify-${{ matrix.platform }}")
+          docker cp "$CLI_CONTAINER:/luakit" "$TEMP_DIR/cli-binary"
+          docker rm "$CLI_CONTAINER"
+          
+          CLI_OUTPUT=$(file "$TEMP_DIR/cli-binary")
+          echo "CLI binary info: $CLI_OUTPUT"
+          
+          case "${{ matrix.platform }}" in
+            "linux/amd64")
+              if echo "$CLI_OUTPUT" | grep -q "x86-64"; then
+                echo "✓ CLI: Binary is x86-64 for ${{ matrix.platform }}"
+              else
+                echo "✗ CLI: Binary is not x86-64 for ${{ matrix.platform }}"
+                exit 1
+              fi
+              ;;
+            "linux/arm64")
+              if echo "$CLI_OUTPUT" | grep -q "aarch64"; then
+                echo "✓ CLI: Binary is aarch64 for ${{ matrix.platform }}"
+              else
+                echo "✗ CLI: Binary is not aarch64 for ${{ matrix.platform }}"
+                exit 1
+              fi
+              ;;
+          esac
+          
+          if echo "$CLI_OUTPUT" | grep -q "statically linked"; then
+            echo "✓ CLI: Binary is statically linked"
+          else
+            echo "✗ CLI: Binary is not statically linked"
+            exit 1
+          fi
+          
+          rm -rf "$TEMP_DIR"
+          docker rmi "luakit:verify-${{ matrix.platform }}" || true
+          docker rmi "luakit-cli:verify-${{ matrix.platform }}" || true
+
+  security-scan:
+    name: Security Scan
+    needs: [build-cli, build-gateway]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run Trivy on CLI image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${{ github.ref_name }}
+          format: 'sarif'
+          output: 'trivy-cli-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+      - name: Run Trivy on gateway image
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}
+          format: 'sarif'
+          output: 'trivy-gateway-results.sarif'
+          severity: 'CRITICAL,HIGH'
+          exit-code: '1'
+      - name: Upload results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: |
+            trivy-cli-results.sarif
+            trivy-gateway-results.sarif
+
+  create-manifests:
+    name: Create Multi-Arch Manifests
+    needs: [build-cli, build-gateway, security-scan]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Create manifests for all tags
+        if: github.event_name != 'pull_request'
+        run: |
+          TAGS="${{ steps.meta.outputs.tags }}"
+          echo "Tags to create manifests for: $TAGS"
+          
+          # Create multi-arch manifests for CLI
+          for TAG in $TAGS; do
+            echo "Creating CLI manifest for: $TAG"
+            docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG-linux-amd64 \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG-linux-arm64 || true
+            docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG || true
+          done
+          
+          # Create multi-arch manifests for Gateway
+          for TAG in $TAGS; do
+            echo "Creating gateway manifest for: $TAG"
+            docker manifest create ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG-linux-amd64 \
+              ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG-linux-arm64 || true
+            docker manifest push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG || true
+          done

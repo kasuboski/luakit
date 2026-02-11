@@ -3,6 +3,7 @@ GOFLAGS = "-v"
 mise.file = ".env"
 
 [tools]
+actionlint = 'latest'
 go = 'prefix:1.25'
 golangci-lint = 'latest'
 "aqua:LuaLS/lua-language-server" = "latest"
@@ -176,7 +177,11 @@ run = "go fmt ./..."
 
 [tasks.lint]
 description = "Run all linters"
-depends = ["lint:go", "lint:lua", "lint:vet"]
+depends = ["lint:actions", "lint:go", "lint:lua", "lint:vet"]
+
+[tasks."lint:actions"]
+description = "Run actions linter"
+run = "actionlint"
 
 [tasks."lint:go"]
 description = "Run golangci-lint"

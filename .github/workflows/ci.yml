@@ -2,275 +2,147 @@ name: CI
 
 on:
   push:
-    branches:
-      - main
-      - master
+    branches: [main, master]
   pull_request:
-    branches:
-      - main
-      - master
+    branches: [main, master]
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  lint:
-    name: Lint
+  setup:
+    name: Setup Environment
     runs-on: ubuntu-latest
+    outputs:
+      cache-key: ${{ steps.cache.outputs.key }}
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Run golangci-lint
-        uses: golangci/golangci-lint-action@v6
+      - uses: actions/checkout@v4
+      - name: Set up mise
+        uses: jdx/mise-action@v2
         with:
           version: latest
+      - name: Cache mise
+        id: cache
+        run: echo "key=${{ runner.os }}-mise-${{ hashFiles('mise.toml') }}" >> $GITHUB_OUTPUT
 
-  fmt:
-    name: Format Check
+  lint:
+    name: Lint (${{ matrix.target }})
+    needs: setup
     runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-
-      - name: Check code formatting
-        run: |
-          if [ "$(gofmt -s -l . | wc -l)" -gt 0 ]; then
-            echo "Code is not formatted. Please run 'go fmt ./...'"
-            gofmt -s -l .
-            exit 1
-          fi
-
-  vet:
-    name: Vet
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Run go vet
-        run: go vet ./...
-
-  test:
-    name: Test
-    runs-on: ubuntu-latest
-    needs: [lint, fmt, vet]
     strategy:
       fail-fast: false
       matrix:
-        go-version: ['1.23', '1.24', '1.25']
+        target: [go, vet, lua, actions, format]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+      - name: Set up mise
+        uses: jdx/mise-action@v2
+      - name: Lint ${{ matrix.target }}
+        run: |
+          case "${{ matrix.target }}" in
+            go) mise run lint:go ;;
+            vet) mise run lint:vet ;;
+            lua) mise run lint:lua ;;
+            actions) mise run lint:actions ;;
+            format)
+              # Check if any files need formatting without modifying them
+              OUTPUT=$(mise exec -- go fmt ./...)
+              if [ -n "$OUTPUT" ]; then
+                echo "Code needs formatting. Run: mise run fmt"
+                echo "Files that need formatting:"
+                echo "$OUTPUT"
+                exit 1
+              fi
+              ;;
+          esac
 
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: ${{ matrix.go-version }}
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Run tests with race detection
-        run: go test -v -race -count=1 ./...
-
+  test-unit:
+    name: Unit Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up mise
+        uses: jdx/mise-action@v2
+      - name: Run unit tests
+        run: mise run test
       - name: Generate coverage report
-        if: matrix.go-version == '1.25'
-        run: go test -race -coverprofile=coverage.out -covermode=atomic ./...
-
-      - name: Upload coverage to Codecov
-        if: matrix.go-version == '1.25'
-        uses: codecov/codecov-action@v4
+        run: mise run test:coverage
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v4
         with:
-          file: ./coverage.out
-          flags: unittests
-          name: codecov-umbrella
+          name: coverage
+          path: coverage.out
+          retention-days: 7
 
   test-integration:
     name: Integration Tests
+    needs: lint
     runs-on: ubuntu-latest
-    needs: [lint, fmt, vet]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Set up BuildKit
+      - uses: actions/checkout@v4
+      - name: Set up mise
+        uses: jdx/mise-action@v2
+      - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Start BuildKit daemon
+      - name: Start BuildKit
         run: |
           docker buildx create --name buildkit --use --driver=docker-container
           docker buildx inspect --bootstrap
-
       - name: Run integration tests
-        run: go test -v -timeout=30m ./... -run Integration
+        run: mise run test:integration
+        env:
+          BUILDKIT_HOST: docker-container://buildkit
 
   build:
-    name: Build
+    name: Build ${{ matrix.binary }} (${{ matrix.goos }}/${{ matrix.goarch }})
+    needs: [test-unit, test-integration]
     runs-on: ubuntu-latest
-    needs: [test, test-integration]
     strategy:
       fail-fast: false
       matrix:
+        binary: [luakit, gateway]
         goos: [linux, darwin]
         goarch: [amd64, arm64]
-        exclude:
-          - goos: darwin
-            goarch: arm64
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Build binary
+      - uses: actions/checkout@v4
+      - name: Set up mise
+        uses: jdx/mise-action@v2
+      - name: Build ${{ matrix.binary }}
         env:
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-          CGO_ENABLED: 0
         run: |
-          VERSION=${{ github.sha }}
-          BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
-          COMMIT=${{ github.sha }}
-          
-          go build -ldflags="-s -w -X main.version=${VERSION} -X main.buildTime=${BUILD_TIME} -X main.commit=${COMMIT}" \
-            -o dist/luakit-${{ matrix.goos }}-${{ matrix.goarch }} \
-            ./cmd/luakit
-
+          if [ "${{ matrix.binary }}" = "gateway" ]; then
+            mise run build:gateway
+          else
+            mise run build
+          fi
       - name: Verify binary
         run: |
-          if [ "${{ matrix.goos }}" = "linux" ]; then
-            docker run --rm -v $(pwd)/dist:/dist alpine:latest sh -c "file /dist/luakit-${{ matrix.goos }}-${{ matrix.goarch }}"
-          fi
-
-      - name: Upload build artifacts
+          ls -lh dist/${{ matrix.binary }}
+          file dist/${{ matrix.binary }} || true
+      - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: luakit-${{ matrix.goos }}-${{ matrix.goarch }}
-          path: dist/luakit-${{ matrix.goos }}-${{ matrix.goarch }}
+          name: ${{ matrix.binary }}-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/${{ matrix.binary }}
           retention-days: 7
 
-  build-image:
-    name: Build Docker Image
-    runs-on: ubuntu-latest
-    needs: [test, test-integration]
-    strategy:
-      fail-fast: false
-      matrix:
-        platform:
-          - linux/amd64
-          - linux/arm64
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-
-      - name: Build image
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          platforms: ${{ matrix.platform }}
-          push: false
-          load: true
-          tags: luakit:test-${{ matrix.platform }}
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
-
-      - name: Verify image
-        run: |
-          docker run --rm luakit:test-${{ matrix.platform }} version
-
-  security-scan:
+  security:
     name: Security Scan
+    needs: build
     runs-on: ubuntu-latest
-    needs: [build]
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-
+      - uses: actions/checkout@v4
+      - name: Set up mise
+        uses: jdx/mise-action@v2
       - name: Run govulncheck
         run: |
           go install golang.org/x/vuln/cmd/govulncheck@latest
           govulncheck ./...
-
       - name: Run gosec
         uses: securego/gosec@master
         with:
           args: ./...
-
-  benchmark:
-    name: Benchmark
-    runs-on: ubuntu-latest
-    needs: [test]
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: '1.25'
-
-      - name: Download dependencies
-        run: go mod download
-
-      - name: Run benchmarks
-        run: go test -bench=. -benchmem -benchtime=1s ./...
-
-      - name: Store benchmark result
-        uses: benchmark-action/github-action-benchmark@v1
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        with:
-          tool: 'go'
-          output-file-path: benchmark.txt
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          auto-push: true
-          alert-threshold: '200%'
-          comment-on-alert: true
-          fail-on-alert: true
