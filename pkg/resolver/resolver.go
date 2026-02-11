@@ -214,7 +214,7 @@ func (r *Resolver) Resolve(ctx context.Context, refStr string, platform ocispec.
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch manifest for %s: %w", name, err)
 	}
-	defer reader.Close()
+	defer func() { _ = reader.Close() }()
 
 	// Read all bytes to allow multiple decode attempts
 	manifestBytes, err := io.ReadAll(reader)
@@ -250,7 +250,7 @@ func (r *Resolver) Resolve(ctx context.Context, refStr string, platform ocispec.
 				if err != nil {
 					return nil, fmt.Errorf("failed to fetch platform manifest for %s: %w", name, err)
 				}
-				defer platformReader.Close()
+				defer func() { _ = platformReader.Close() }()
 
 				platformBytes, err := io.ReadAll(platformReader)
 				if err != nil {
@@ -286,7 +286,7 @@ func (r *Resolver) Resolve(ctx context.Context, refStr string, platform ocispec.
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch config for %s: %w", name, err)
 	}
-	defer configReader.Close()
+	defer func() { _ = configReader.Close() }()
 
 	// Read all bytes first to debug
 	configBytes, err := io.ReadAll(configReader)
@@ -302,8 +302,12 @@ func (r *Resolver) Resolve(ctx context.Context, refStr string, platform ocispec.
 	}
 
 	// Set the platform if not set
-	if imageConfig.Platform.OS == "" {
-		imageConfig.Platform = platform
+	if imageConfig.OS == "" {
+		imageConfig.OS = platform.OS
+		imageConfig.Architecture = platform.Architecture
+		imageConfig.Variant = platform.Variant
+		imageConfig.OSVersion = platform.OSVersion
+		imageConfig.OSFeatures = platform.OSFeatures
 	}
 
 	config := &ImageConfig{

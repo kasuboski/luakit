@@ -92,13 +92,13 @@ func (w *DOTWriter) writeNode(state *dag.State, visited map[string]bool, builder
 		}
 	}
 
-	builder.WriteString(fmt.Sprintf("  \"%s\" [label=\"%s\"];\n", digest, label))
+	fmt.Fprintf(builder, "  \"%s\" [label=\"%s\"];\n", digest, label)
 
 	for _, edge := range node.Inputs() {
 		inputDigest := edge.Node().Digest().String()
 		inputOpType := getOpType(edge.Node().Op())
 		if w.filterOp == "" || inputOpType == w.filterOp {
-			builder.WriteString(fmt.Sprintf("  \"%s\" -> \"%s\";\n", inputDigest, digest))
+			fmt.Fprintf(builder, "  \"%s\" -> \"%s\";\n", inputDigest, digest)
 		}
 	}
 }

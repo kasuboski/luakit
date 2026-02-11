@@ -8,8 +8,6 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/kasuboski/luakit/pkg/dag"
-	"github.com/kasuboski/luakit/pkg/luavm"
 	pb "github.com/moby/buildkit/solver/pb"
 	"github.com/stretchr/testify/require"
 )
@@ -80,16 +78,6 @@ func requireDeterministic(t *testing.T, script string) {
 	require.NoError(t, err, "second build should succeed")
 
 	require.Equal(t, def1, def2, "output should be deterministic")
-}
-
-func requireNoSourceOp(t *testing.T, pbDef *pb.Definition) {
-	t.Helper()
-
-	for _, opBytes := range pbDef.Def {
-		var op pb.Op
-		require.NoError(t, op.UnmarshalVT(opBytes))
-		require.Nil(t, op.GetSource(), "should not have any source ops")
-	}
 }
 
 func requireExecOpCount(t *testing.T, pbDef *pb.Definition, count int) {
@@ -204,22 +192,6 @@ func requireExecMeta(t *testing.T, pbDef *pb.Definition, cwd, user string, env [
 	t.Fatal("definition should have exec op with expected meta")
 }
 
-func requirePlatform(t *testing.T, pbDef *pb.Definition, os, arch, variant string) {
-	t.Helper()
-
-	for _, opBytes := range pbDef.Def {
-		var op pb.Op
-		require.NoError(t, op.UnmarshalVT(opBytes))
-		if op.Platform != nil {
-			require.Equal(t, os, op.Platform.OS)
-			require.Equal(t, arch, op.Platform.Architecture)
-			require.Equal(t, variant, op.Platform.Variant)
-			return
-		}
-	}
-	t.Fatal("definition should have op with expected platform")
-}
-
 func requireNetworkMode(t *testing.T, pbDef *pb.Definition, mode pb.NetMode) {
 	t.Helper()
 
@@ -248,20 +220,6 @@ func requireSecurityMode(t *testing.T, pbDef *pb.Definition, mode pb.SecurityMod
 	t.Fatal("definition should have exec op with expected security mode")
 }
 
-func requireImageConfig(t *testing.T, pbDef *pb.Definition, entrypoint, cmd []string, env map[string]string) {
-	t.Helper()
-
-	for _, meta := range pbDef.Metadata {
-		if desc := meta.GetDescription(); desc != nil {
-			if configStr, ok := desc["moby.buildkit.image.config"]; ok {
-				require.NotEmpty(t, configStr)
-				return
-			}
-		}
-	}
-	t.Fatal("definition should have image config in metadata")
-}
-
 func requireSourceIdentifier(t *testing.T, pbDef *pb.Definition, identifier string) {
 	t.Helper()
 
@@ -282,31 +240,4 @@ func createTestScript(t *testing.T, script string) string {
 	scriptPath := filepath.Join(t.TempDir(), "build.lua")
 	require.NoError(t, os.WriteFile(scriptPath, []byte(script), 0644))
 	return scriptPath
-}
-
-func createTestScriptForGolden(t *testing.T, script, scriptName string) string {
-	t.Helper()
-
-	wd, _ := os.Getwd()
-	scriptDir := filepath.Join(wd, "testdata", "golden_scripts")
-	require.NoError(t, os.MkdirAll(scriptDir, 0755))
-
-	scriptPath := filepath.Join(scriptDir, scriptName)
-	require.NoError(t, os.WriteFile(scriptPath, []byte(script), 0644))
-	return scriptPath
-}
-
-func createLuaVMAndRun(t *testing.T, script string) (*dag.State, any) {
-	t.Helper()
-
-	scriptPath := createTestScript(t, script)
-	scriptData, err := os.ReadFile(scriptPath)
-	require.NoError(t, err)
-	luavm.RegisterSourceFile(scriptPath, scriptData)
-
-	result, err := luavm.EvaluateFile(scriptPath, nil)
-	require.NoError(t, err)
-	require.NotNil(t, result.State, "should have exported state")
-
-	return result.State, result.ImageConfig
 }

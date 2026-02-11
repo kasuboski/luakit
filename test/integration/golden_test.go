@@ -174,13 +174,3 @@ func normalizeDefinition(data []byte) []byte {
 	out, _ := def.MarshalVT()
 	return out
 }
-
-func getScenarioNumber(testName string) int {
-	var num int
-	for _, c := range testName {
-		if c >= '0' && c <= '9' {
-			num = num*10 + int(c-'0')
-		}
-	}
-	return num
-}

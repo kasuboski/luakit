@@ -42,10 +42,6 @@
 
 ---@alias UserOpt string|integer
 
----@class ImageOptions
----@field platform? string Platform string (e.g., "linux/arm64")
----@field resolve_digest? boolean Whether to resolve image config and digest
-
 ---A build state representing a point in the build graph
 ---@class State
 local State = {}

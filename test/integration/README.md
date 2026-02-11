@@ -281,10 +281,8 @@ The `helpers_test.go` file provides useful test helpers:
 - `requireDiffOp(t, pbDef)` - Validate diff operation
 - `requireMountOfType(t, pbDef, mountType, dest)` - Find specific mount
 - `requireExecMeta(t, pbDef, cwd, user, env)` - Validate exec metadata
-- `requirePlatform(t, pbDef, os, arch, variant)` - Validate platform spec
 - `requireNetworkMode(t, pbDef, mode)` - Validate network mode
 - `requireSecurityMode(t, pbDef, mode)` - Validate security mode
-- `requireImageConfig(t, pbDef, ...)` - Validate image config
 - `requireSourceIdentifier(t, pbDef, identifier)` - Validate source op identifier
 - `createTestScript(t, script)` - Create temporary test script
 

@@ -341,11 +341,12 @@ func parsePlatformString(str string) *pb.Platform {
 	platform := &pb.Platform{}
 
 	for _, part := range parts {
-		if part.Key == "os" {
+		switch part.Key {
+		case "os":
 			platform.OS = part.Value
-		} else if part.Key == "arch" || part.Key == "architecture" {
+		case "arch", "architecture":
 			platform.Architecture = part.Value
-		} else if part.Key == "variant" {
+		case "variant":
 			platform.Variant = part.Value
 		}
 	}
@@ -507,11 +508,12 @@ func bkPlatform(L *lua.LState) int {
 		}
 
 		for _, part := range parts {
-			if part.Key == "os" {
+			switch part.Key {
+			case "os":
 				platform.OS = part.Value
-			} else if part.Key == "arch" || part.Key == "architecture" {
+			case "arch", "architecture":
 				platform.Architecture = part.Value
-			} else if part.Key == "variant" {
+			case "variant":
 				platform.Variant = part.Value
 			}
 		}

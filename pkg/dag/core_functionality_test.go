@@ -124,7 +124,7 @@ func TestSerializeDiffOperation(t *testing.T) {
 		if err := op.UnmarshalVT(dt); err != nil {
 			continue
 		}
-		if op.GetDiff() != nil {
+		if diff := op.GetDiff(); diff != nil {
 			foundDiffOp = true
 			if len(op.Inputs) != 2 {
 				t.Errorf("Expected 2 inputs in diff op, got %d", len(op.Inputs))
@@ -470,10 +470,6 @@ func TestSerializeWithNilOptions(t *testing.T) {
 		t.Fatalf("Failed to serialize with nil options: %v", err)
 	}
 
-	if def == nil {
-		t.Error("Expected non-nil definition")
-	}
-
 	if len(def.Def) != 2 {
 		t.Errorf("Expected 2 ops, got %d", len(def.Def))
 	}
@@ -538,13 +534,12 @@ func TestSerializeWithVeryLongIdentifiers(t *testing.T) {
 		t.Fatalf("Failed to unmarshal op: %v", err)
 	}
 
-	source := unmarshaledOp.GetSource()
-	if source == nil {
+	if source := unmarshaledOp.GetSource(); source != nil {
+		if source.Identifier != longIdentifier {
+			t.Errorf("Identifier not preserved: got '%s'", source.Identifier)
+		}
+	} else {
 		t.Error("Expected SourceOp")
-	}
-
-	if source.Identifier != longIdentifier {
-		t.Errorf("Identifier not preserved: got '%s'", source.Identifier)
 	}
 }
 

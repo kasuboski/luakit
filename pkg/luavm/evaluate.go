@@ -50,7 +50,7 @@ func EvaluateFile(path string, config *VMConfig) (*EvalResult, error) {
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}
-	defer f.Close()
+	defer func() { _ = f.Close() }()
 
 	return Evaluate(f, path, config)
 }

@@ -110,15 +110,15 @@ func parseBuildFlags() *buildFlags {
 	for i < len(args) {
 		arg := args[i]
 
-		switch {
-		case arg == "--output" || arg == "-o":
+		switch arg {
+		case "--output", "-o":
 			if i+1 >= len(args) {
 				fmt.Fprintf(os.Stderr, "error: %s requires a value\n", arg)
 				os.Exit(1)
 			}
 			flags.outputPath = args[i+1]
 			i += 2
-		case arg == "--frontend-arg":
+		case "--frontend-arg":
 			if i+1 >= len(args) {
 				fmt.Fprintf(os.Stderr, "error: --frontend-arg requires a value\n")
 				os.Exit(1)
@@ -130,7 +130,7 @@ func parseBuildFlags() *buildFlags {
 			}
 			flags.frontendArgs[parts[0]] = parts[1]
 			i += 2
-		case arg == "--help" || arg == "-h":
+		case "--help", "-h":
 			fmt.Fprintf(os.Stderr, `luakit build - Build from a Lua script
 
 USAGE:
@@ -187,7 +187,7 @@ func handleBuild() {
 	config := createVMConfig(args.script)
 
 	for k, v := range flags.frontendArgs {
-		os.Setenv(k, v)
+		_ = os.Setenv(k, v)
 	}
 
 	result, err := luavm.Evaluate(strings.NewReader(string(scriptData)), args.script, config)

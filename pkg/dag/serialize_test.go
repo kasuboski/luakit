@@ -32,13 +32,12 @@ func TestSerializeSingleNode(t *testing.T) {
 		t.Fatalf("Failed to unmarshal op: %v", err)
 	}
 
-	sourceOp := unmarshaledOp.GetSource()
-	if sourceOp == nil {
+	if sourceOp := unmarshaledOp.GetSource(); sourceOp != nil {
+		if sourceOp.Identifier != "docker-image://alpine:latest" {
+			t.Errorf("Expected identifier 'docker-image://alpine:latest', got '%s'", sourceOp.Identifier)
+		}
+	} else {
 		t.Error("Expected source operation")
-	}
-
-	if sourceOp.Identifier != "docker-image://alpine:latest" {
-		t.Errorf("Expected identifier 'docker-image://alpine:latest', got '%s'", sourceOp.Identifier)
 	}
 }
 

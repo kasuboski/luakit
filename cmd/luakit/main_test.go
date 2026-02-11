@@ -209,12 +209,12 @@ func TestDOTWriter(t *testing.T) {
 		if err := writer.Write(state); err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
-		w.Close()
+		_ = w.Close()
 	}()
 
 	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	w.Close()
+	_, _ = buf.ReadFrom(r)
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	<-done
@@ -239,12 +239,12 @@ func TestJSONWriter(t *testing.T) {
 		if err := writer.Write(state); err != nil {
 			t.Errorf("unexpected error: %v", err)
 		}
-		w.Close()
+		_ = w.Close()
 	}()
 
 	var buf bytes.Buffer
-	buf.ReadFrom(r)
-	w.Close()
+	_, _ = buf.ReadFrom(r)
+	_ = w.Close()
 	os.Stdout = oldStdout
 
 	<-done

@@ -148,7 +148,7 @@ func getAvailableInputNames(inputs map[string]llb.State) []string {
 
 func evaluateLua(source []byte, frontendOpts map[string]string) (*luavm.EvalResult, error) {
 	for k, v := range frontendOpts {
-		os.Setenv(k, v)
+		_ = os.Setenv(k, v)
 	}
 
 	result, err := luavm.Evaluate(strings.NewReader(string(source)), "build.lua", nil)

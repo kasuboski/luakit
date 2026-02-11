@@ -17,7 +17,7 @@ bk.export(result)`
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	if _, err := tmpFile.WriteString(script); err != nil {
 		b.Fatal(err)
@@ -54,7 +54,7 @@ func BenchmarkCLIColdStart100LineScript(b *testing.B) {
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	if _, err := tmpFile.WriteString(script); err != nil {
 		b.Fatal(err)
@@ -88,7 +88,7 @@ bk.export(result)`
 	if err != nil {
 		b.Fatal(err)
 	}
-	defer os.Remove(tmpFile.Name())
+	defer func() { _ = os.Remove(tmpFile.Name()) }()
 
 	if _, err := tmpFile.WriteString(script); err != nil {
 		b.Fatal(err)
