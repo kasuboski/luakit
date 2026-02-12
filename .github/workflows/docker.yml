@@ -61,7 +61,6 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           tags: |
-            ${{ steps.meta.outputs.tags }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${{ steps.meta.outputs.version }}-${{ steps.platform.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
@@ -116,7 +115,6 @@ jobs:
           platforms: ${{ matrix.platform }}
           push: true
           tags: |
-            ${{ steps.meta.outputs.tags }}
             ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}-${{ steps.platform.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
