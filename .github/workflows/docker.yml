@@ -222,6 +222,7 @@ jobs:
           output: 'trivy-cli-results-${{ steps.platform.outputs.tag }}.sarif'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
+          args: --platform ${{ matrix.platform }}
       - name: Run Trivy on gateway image
         uses: aquasecurity/trivy-action@master
         with:
@@ -230,6 +231,7 @@ jobs:
           output: 'trivy-gateway-results-${{ steps.platform.outputs.tag }}.sarif'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
+          args: --platform ${{ matrix.platform }}
 
   create-manifests:
     name: Create Multi-Arch Manifests
