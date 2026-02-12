@@ -26,7 +26,7 @@ local with_pip = base_env:run({
     },
 })
 
-local req_files = bk.local_("context", { include_patterns = { "requirements.txt" } })
+local req_files = bk.local_("context", { include = { "requirements.txt" } })
 
 local with_deps = with_pip:run({ "pip", "install", "--no-cache-dir", "-r", "requirements.txt" }, {
     cwd = "/workspace",

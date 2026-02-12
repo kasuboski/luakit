@@ -47,7 +47,7 @@ local builder = bk.image("node:20-alpine")
 local deps = builder:run({ "npm", "ci", "--only=production" }, {
     cwd = "/app",
     mounts = {
-        bk.local_("context", { include_patterns = { "package*.json" } }),
+        bk.local_("context", { include = { "package*.json" } }),
     },
 })
 
@@ -145,9 +145,9 @@ bk.export(final, {
 ### 2. Limited Pattern Matching in COPY
 **Issue**: Dockerfiles support patterns in `COPY package*.json ./` but Luakit's `local_()` mount needs explicit patterns.
 
-**Current Workaround**: Use `include_patterns` option with explicit list:
+**Current Workaround**: Use `include` option with explicit list:
 ```lua
-bk.local_("context", { include_patterns = { "package*.json" } })
+bk.local_("context", { include = { "package*.json" } })
 ```
 
 **Limitation**: Can't use complex patterns or exclusions easily.

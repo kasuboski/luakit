@@ -7,7 +7,7 @@ local builder_deps = builder:run({
     "apk", "add", "--no-cache", "git", "ca-certificates"
 })
 
-local context_files = bk.local_("context", { include_patterns = { "go.*" } })
+local context_files = bk.local_("context", { include = { "go.*" } })
 
 local mod_cache = builder_deps:run({ "go", "mod", "download" }, {
     cwd = "/app",

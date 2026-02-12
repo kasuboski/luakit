@@ -16,6 +16,22 @@ Luakit is a Lua-based frontend for BuildKit that allows you to write container i
 
 ## Quick Start
 
+### Your First Build
+
+Create `build.lua`:
+
+```lua
+local base = bk.image("alpine:3.19")
+local result = base:run("echo 'Hello from Luakit!' > /greeting.txt")
+bk.export(result)
+```
+
+Build the image:
+
+```bash
+luakit build build.lua | buildctl build --no-frontend --local context=.
+```
+
 ### Installation
 
 **From pre-built binaries (Recommended):**
@@ -50,20 +66,56 @@ go install github.com/kasuboski/luakit/cmd/luakit@latest
 go install github.com/kasuboski/luakit/cmd/gateway@latest
 ```
 
-### Your First Build
-
-Create `build.lua`:
-
-```lua
-local base = bk.image("alpine:3.19")
-local result = base:run("echo 'Hello from Luakit!' > /greeting.txt")
-bk.export(result)
-```
-
-Build the image:
+### CLI Usage
 
 ```bash
+# Validate a script
+luakit validate build.lua
+
+# Visualize the build graph
+luakit dag build.lua | dot -Tsvg > dag.svg
+
+# Build an image (pipes to buildctl)
 luakit build build.lua | buildctl build --no-frontend --local context=.
+
+# Build with custom output file
+luakit build -o output.pb build.lua
+```
+
+## BuildKit Daemon Setup
+
+### Installation
+
+**From pre-built binaries (Recommended):**
+
+Download from the [Releases](https://github.com/kasuboski/luakit/releases) page for your platform:
+
+```bash
+# Linux AMD64
+wget https://github.com/kasuboski/luakit/releases/download/v0.1.0/luakit-0.1.0-linux-amd64
+chmod +x luakit-0.1.0-linux-amd64
+sudo mv luakit-0.1.0-linux-amd64 /usr/local/bin/luakit
+
+# macOS (Intel or Apple Silicon)
+curl -L -O https://github.com/kasuboski/luakit/releases/download/v0.1.0/luakit-0.1.0-darwin-$(uname -m)
+chmod +x luakit-0.1.0-darwin-$(uname -m)
+sudo mv luakit-0.1.0-darwin-$(uname -m) /usr/local/bin/luakit
+```
+
+**With Homebrew:**
+
+```bash
+brew install https://github.com/kasuboski/luakit/releases/download/v0.1.0/luakit.rb
+```
+
+**With Go:**
+
+```bash
+# Install CLI binary
+go install github.com/kasuboski/luakit/cmd/luakit@latest
+
+# Install gateway binary (for BuildKit frontend mode)
+go install github.com/kasuboski/luakit/cmd/gateway@latest
 ```
 
 ## BuildKit Daemon Setup
@@ -216,7 +268,7 @@ Any editor supporting LuaLS will automatically detect the type definitions in th
 local builder = bk.image("golang:1.21-alpine")
 
 local go_files = bk.local_("context", {
-    include_patterns = { "go.mod", "go.sum" }
+    include = { "go.mod", "go.sum" }
 })
 local with_go = builder:copy(go_files, ".", "/app")
 
@@ -252,24 +304,6 @@ bk.export(final, {
 })
 ```
 
-## CLI Usage
-
-### CLI Mode
-
-```bash
-# Validate a script
-luakit validate build.lua
-
-# Visualize the build graph
-luakit dag build.lua | dot -Tsvg > dag.svg
-
-# Build an image (pipes to buildctl)
-luakit build build.lua | buildctl build --no-frontend --local context=.
-
-# Build with custom output file
-luakit build -o output.pb build.lua
-```
-
 ### Gateway Mode
 
 ```bash
@@ -297,10 +331,10 @@ docker buildx build \
 
 ## Comparison to Alternatives
 
-| Frontend | Language | Startup | Dependencies | LLB Coverage | Learning Curve |
-|----------|----------|---------|-------------|----------------|
-| Dockerfile | Custom DSL | N/A (native) | None | Low |
-| Dagger | Go/Python/TS | ~2-5s (container) | Full SDK | Medium-High |
+| Frontend | Language | Startup | LLB Coverage | Learning Curve |
+|----------|----------|---------|--------------|----------------|
+| Dockerfile | Custom DSL | N/A (native) | Partial | Low |
+| Dagger | Go/Python/TS | ~2-5s (container) | Full | Medium-High |
 | Earthly | Earthfile DSL | ~1s | Partial | Low-Medium |
 | HLB | Custom DSL | ~100ms | Full | Medium |
 | **Luakit** | **Lua** | **~5ms** | **Full** | **Low** |
@@ -431,16 +465,6 @@ We welcome contributions! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for guid
 ## License
 
 MIT License - see [LICENSE](LICENSE) for details
-
-## Roadmap
-
-- [ ] Build arguments (ARG)
-- [ ] Health checks
-- [ ] Volume declarations
-- [ ] Stop signal
-- [ ] Onbuild support
-- [ ] Multi-output builds
-- [ ] More prelude helpers
 
 ## Acknowledgments
 

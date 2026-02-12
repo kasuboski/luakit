@@ -3,7 +3,7 @@
 
 local builder = bk.image("node:20-alpine")
 
-local pkg_files = bk.local_("context", { include_patterns = { "package*.json" } })
+local pkg_files = bk.local_("context", { include = { "package*.json" } })
 
 local deps = builder:run({ "npm", "ci", "--only=production" }, {
     cwd = "/app",

@@ -19,7 +19,7 @@ Order operations for maximum cache reuse:
 ```lua
 -- Good: Dependency files first
 local pkg = base:copy(bk.local_("context", {
-    include_patterns = { "package*.json" }
+    include = { "package*.json" }
 }), ".", "/app")
 local deps = pkg:run("npm ci", {
     cwd = "/app",
@@ -320,7 +320,7 @@ local base = bk.image("alpine:3.19")
 
 -- Copy go.mod first for better cache hit rate
 local go_files = base:copy(bk.local_("context", {
-    include_patterns = { "go.mod", "go.sum" }
+    include = { "go.mod", "go.sum" }
 }), ".", "/app")
 
 -- Shared cache for faster parallel builds
@@ -507,7 +507,7 @@ local app = base:copy(bk.local_("context"), ".", "/app")
 
 -- Good: Copy dependency files first
 local pkg = base:copy(bk.local_("context", {
-    include_patterns = { "package*.json" }
+    include = { "package*.json" }
 }), ".", "/app")
 ```
 

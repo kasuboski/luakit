@@ -42,7 +42,7 @@ Separate dependencies, build, and runtime:
 -- Stage 1: Install dependencies
 local base = bk.image("node:20")
 local pkg = base:copy(bk.local_("context", {
-    include_patterns = { "package*.json" }
+    include = { "package*.json" }
 }), ".", "/app")
 local deps = pkg:run("npm ci", {
     cwd = "/app",
@@ -185,7 +185,7 @@ Copy dependency files first:
 ```lua
 -- Copy go.mod and go.sum
 local go_files = bk.local_("context", {
-    include_patterns = { "go.mod", "go.sum" }
+    include = { "go.mod", "go.sum" }
 })
 local with_go = base:copy(go_files, ".", "/app")
 
@@ -231,7 +231,7 @@ Copy multiple files in sequence:
 ```lua
 -- Copy package files first
 local pkg = base:copy(bk.local_("context", {
-    include_patterns = { "package*.json" }
+    include = { "package*.json" }
 }), ".", "/app")
 
 -- Install dependencies
@@ -342,7 +342,7 @@ local builder = bk.image("golang:1.21")
 
 -- Copy go.mod and go.sum
 local go_files = bk.local_("context", {
-    include_patterns = { "go.mod", "go.sum" }
+    include = { "go.mod", "go.sum" }
 })
 local with_go = builder:copy(go_files, ".", "/app")
 
@@ -375,7 +375,7 @@ local base = bk.image("node:20")
 
 -- Copy package files
 local pkg = base:copy(bk.local_("context", {
-    include_patterns = { "package*.json" }
+    include = { "package*.json" }
 }), ".", "/app")
 
 -- Install dependencies
@@ -404,7 +404,7 @@ local base = bk.image("python:3.11-slim")
 
 -- Copy requirements
 local req = base:copy(bk.local_("context", {
-    include_patterns = { "requirements*.txt" }
+    include = { "requirements*.txt" }
 }), ".", "/app")
 
 -- Install dependencies
@@ -432,7 +432,7 @@ local builder = bk.image("rust:1.75-alpine")
 
 -- Copy Cargo.toml and Cargo.lock
 local cargo_files = bk.local_("context", {
-    include_patterns = { "Cargo.toml", "Cargo.lock" }
+    include = { "Cargo.toml", "Cargo.lock" }
 })
 local with_cargo = builder:copy(cargo_files, ".", "/app")
 
@@ -680,7 +680,7 @@ local builder_deps = builder:run({
 
 -- Copy dependency manifests
 local go_files = bk.local_("context", {
-    include_patterns = { "go.mod", "go.sum" }
+    include = { "go.mod", "go.sum" }
 })
 local with_go = builder_deps:copy(go_files, ".", "/app")
 
@@ -734,7 +734,7 @@ local builder = bk.image("node:20-slim")
 
 -- Copy package files
 local pkg = builder:copy(bk.local_("context", {
-    include_patterns = { "package*.json" }
+    include = { "package*.json" }
 }), ".", "/app")
 
 -- Install production dependencies
@@ -784,7 +784,7 @@ local builder = bk.image("python:3.11-slim")
 
 -- Copy requirements
 local req = builder:copy(bk.local_("context", {
-    include_patterns = { "requirements*.txt" }
+    include = { "requirements*.txt" }
 }), ".", "/app")
 
 -- Install dependencies
