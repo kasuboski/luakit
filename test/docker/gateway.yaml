@@ -1,0 +1,17 @@
+schemaVersion: "2.0.0"
+
+metadataTest:
+  entrypoint: ["/luakit"]
+
+fileExistenceTests:
+  - name: "luakit binary exists"
+    path: "/luakit"
+    shouldExist: true
+    isExecutableBy: "any"
+
+commandTests:
+  - name: "luakit binary is executable and returns version"
+    command: "/luakit"
+    args: ["version"]
+    expectedOutput: [".*"]
+    exitCode: 0

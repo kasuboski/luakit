@@ -4,6 +4,7 @@ mise.file = ".env"
 
 [tools]
 actionlint = 'latest'
+container-structure-test = 'latest'
 go = 'prefix:1.25'
 golangci-lint = 'latest'
 "aqua:LuaLS/lua-language-server" = "latest"
@@ -132,6 +133,30 @@ depends = ["test"]
 run = '''
 go tool cover -html=coverage.out -o coverage.html
 '''
+
+[tasks."test:docker:gateway"]
+description = "Run container structure tests on gateway image"
+run = '''
+IMAGE="${IMAGE:-{{vars.binary_name}}:latest}"
+CONFIG="test/docker/gateway.yaml"
+
+echo "Running container structure tests on $IMAGE with $CONFIG..."
+container-structure-test test --image "$IMAGE" --config "$CONFIG"
+'''
+
+[tasks."test:docker:cli"]
+description = "Run container structure tests on CLI image"
+run = '''
+IMAGE="${IMAGE:-{{vars.binary_name}}:cli}"
+CONFIG="test/docker/cli.yaml"
+
+echo "Running container structure tests on $IMAGE with $CONFIG..."
+container-structure-test test --image "$IMAGE" --config "$CONFIG"
+'''
+
+[tasks."test:docker"]
+description = "Run container structure tests on all images"
+depends = ["test:docker:gateway", "test:docker:cli"]
 
 [tasks.clean]
 description = "Clean build artifacts"

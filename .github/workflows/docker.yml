@@ -116,13 +116,8 @@ jobs:
         platform: [linux/amd64, linux/arm64]
     steps:
       - uses: actions/checkout@v4
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v3
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
-      - name: Set sanitized platform tag
-        id: platform
-        run: echo "tag=${{ matrix.platform }}" | sed 's|/|-|g' >> "$GITHUB_OUTPUT"
+      - name: Install mise
+        uses: jdx/mise-action@v2
       - name: Extract metadata for tags
         id: meta
         uses: docker/metadata-action@v5
@@ -132,106 +127,54 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}
-      - name: Build gateway for verification
-        uses: docker/build-push-action@v6
+      - name: Login to GHCR
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
         with:
-          context: .
-          file: Dockerfile
-          platforms: ${{ matrix.platform }}
-          load: true
-          tags: luakit:verify-${{ steps.platform.outputs.tag }}
-          cache-from: type=gha
-          provenance: false
-      - name: Build CLI for verification
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile.cli
-          platforms: ${{ matrix.platform }}
-          load: true
-          tags: luakit-cli:verify-${{ steps.platform.outputs.tag }}
-          cache-from: type=gha
-          provenance: false
-      - name: Verify binary architecture and static linking
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Pull gateway image for verification
         run: |
-          # Verify gateway binary
-          TEMP_DIR=$(mktemp -d)
-          CONTAINER_ID=$(docker create "luakit:verify-${{ steps.platform.outputs.tag }}")
-          docker cp "$CONTAINER_ID:/luakit" "$TEMP_DIR/gateway-binary"
-          docker rm "$CONTAINER_ID"
-          
-          FILE_OUTPUT=$(file "$TEMP_DIR/gateway-binary")
-          echo "Gateway binary info: $FILE_OUTPUT"
-          
-          case "${{ matrix.platform }}" in
-            "linux/amd64")
-              if echo "$FILE_OUTPUT" | grep -q "x86-64"; then
-                echo "✓ Gateway: Binary is x86-64 for ${{ matrix.platform }}"
-              else
-                echo "✗ Gateway: Binary is not x86-64 for ${{ matrix.platform }}"
-                exit 1
-              fi
-              ;;
-            "linux/arm64")
-              if echo "$FILE_OUTPUT" | grep -q "aarch64"; then
-                echo "✓ Gateway: Binary is aarch64 for ${{ matrix.platform }}"
-              else
-                echo "✗ Gateway: Binary is not aarch64 for ${{ matrix.platform }}"
-                exit 1
-              fi
-              ;;
-          esac
-          
-          if echo "$FILE_OUTPUT" | grep -q "statically linked"; then
-            echo "✓ Gateway: Binary is statically linked"
-          else
-            echo "✗ Gateway: Binary is not statically linked"
-            exit 1
-          fi
-          
-          # Verify CLI binary
-          CLI_CONTAINER=$(docker create "luakit-cli:verify-${{ steps.platform.outputs.tag }}")
-          docker cp "$CLI_CONTAINER:/luakit" "$TEMP_DIR/cli-binary"
-          docker rm "$CLI_CONTAINER"
-          
-          CLI_OUTPUT=$(file "$TEMP_DIR/cli-binary")
-          echo "CLI binary info: $CLI_OUTPUT"
-          
-          case "${{ matrix.platform }}" in
-            "linux/amd64")
-              if echo "$CLI_OUTPUT" | grep -q "x86-64"; then
-                echo "✓ CLI: Binary is x86-64 for ${{ matrix.platform }}"
-              else
-                echo "✗ CLI: Binary is not x86-64 for ${{ matrix.platform }}"
-                exit 1
-              fi
-              ;;
-            "linux/arm64")
-              if echo "$CLI_OUTPUT" | grep -q "aarch64"; then
-                echo "✓ CLI: Binary is aarch64 for ${{ matrix.platform }}"
-              else
-                echo "✗ CLI: Binary is not aarch64 for ${{ matrix.platform }}"
-                exit 1
-              fi
-              ;;
-          esac
-          
-          if echo "$CLI_OUTPUT" | grep -q "statically linked"; then
-            echo "✓ CLI: Binary is statically linked"
-          else
-            echo "✗ CLI: Binary is not statically linked"
-            exit 1
-          fi
-          
-          rm -rf "$TEMP_DIR"
-          docker rmi "luakit:verify-${{ steps.platform.outputs.tag }}" || true
-          docker rmi "luakit-cli:verify-${{ steps.platform.outputs.tag }}" || true
+          TAG="${{ steps.meta.outputs.version }}"
+          PLATFORM="${{ matrix.platform }}"
+          SANITIZED_PLATFORM="${PLATFORM//\//-}"
+          GATEWAY_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG-$SANITIZED_PLATFORM"
+          echo "Pulling gateway image: $GATEWAY_IMAGE"
+          docker pull "$GATEWAY_IMAGE"
+          docker tag "$GATEWAY_IMAGE" luakit:verify
+      - name: Pull CLI image for verification
+        run: |
+          TAG="${{ steps.meta.outputs.version }}"
+          PLATFORM="${{ matrix.platform }}"
+          SANITIZED_PLATFORM="${PLATFORM//\//-}"
+          CLI_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG-$SANITIZED_PLATFORM"
+          echo "Pulling CLI image: $CLI_IMAGE"
+          docker pull "$CLI_IMAGE"
+          docker tag "$CLI_IMAGE" luakit-cli:verify
+      - name: Verify gateway image structure
+        run: mise run test:docker:gateway
+        env:
+          IMAGE: luakit:verify
+      - name: Verify CLI image structure
+        run: mise run test:docker:cli
+        env:
+          IMAGE: luakit-cli:verify
+      - name: Cleanup
+        if: always()
+        run: |
+          docker rmi luakit:verify || true
+          docker rmi luakit-cli:verify || true
 
   security-scan:
-    name: Security Scan
+    name: Security Scan (${{ matrix.platform }})
     needs: [build-cli, build-gateway]
     runs-on: ubuntu-latest
     if: github.event_name != 'pull_request'
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [linux/amd64, linux/arm64]
     steps:
       - name: Extract metadata for tags
         id: meta
@@ -242,33 +185,32 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
       - name: Run Trivy on CLI image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${{ steps.meta.outputs.version }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${{ steps.meta.outputs.version }}-${{ matrix.platform }}
           format: 'sarif'
-          output: 'trivy-cli-results.sarif'
+          output: 'trivy-cli-results-${{ matrix.platform }}.sarif'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
       - name: Run Trivy on gateway image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}-${{ matrix.platform }}
           format: 'sarif'
-          output: 'trivy-gateway-results.sarif'
+          output: 'trivy-gateway-results-${{ matrix.platform }}.sarif'
           severity: 'CRITICAL,HIGH'
           exit-code: '1'
-      - name: Upload results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
-        if: always()
-        with:
-          sarif_file: |
-            trivy-cli-results.sarif
-            trivy-gateway-results.sarif
 
   create-manifests:
     name: Create Multi-Arch Manifests
-    needs: [build-cli, build-gateway, security-scan]
+    needs: [build-cli, build-gateway, verify, security-scan]
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
