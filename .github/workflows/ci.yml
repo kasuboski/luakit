@@ -1,0 +1,134 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+permissions:
+  contents: read
+  packages: read
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  lint:
+    name: Lint (${{ matrix.target }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        target: [go, vet, lua, actions, format]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up mise
+        uses: jdx/mise-action@v2
+      - name: Lint ${{ matrix.target }}
+        run: |
+          case "${{ matrix.target }}" in
+            go) mise run lint:go ;;
+            vet) mise run lint:vet ;;
+            lua) mise run lint:lua ;;
+            actions) mise run lint:actions ;;
+            format)
+              # Check if any files need formatting without modifying them
+              OUTPUT=$(mise exec -- go fmt ./...)
+              if [ -n "$OUTPUT" ]; then
+                echo "Code needs formatting. Run: mise run fmt"
+                echo "Files that need formatting:"
+                echo "$OUTPUT"
+                exit 1
+              fi
+              ;;
+          esac
+
+  test-unit:
+    name: Unit Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up mise
+        uses: jdx/mise-action@v2
+      - name: Run unit tests
+        run: mise run test
+      - name: Generate coverage report
+        run: mise run test:coverage
+      - name: Upload coverage artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: coverage
+          path: coverage.out
+          retention-days: 7
+
+  test-integration:
+    name: Integration Tests
+    needs: lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up mise
+        uses: jdx/mise-action@v2
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      - name: Start BuildKit
+        run: |
+          docker buildx create --name buildkit --use --driver=docker-container
+          docker buildx inspect --bootstrap
+      - name: Run integration tests
+        run: mise run test:integration
+        env:
+          BUILDKIT_HOST: docker-container://buildkit
+
+  build:
+    name: Build ${{ matrix.binary }} (${{ matrix.goos }}/${{ matrix.goarch }})
+    needs: [test-unit, test-integration]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        binary: [luakit, gateway]
+        goos: [linux, darwin]
+        goarch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up mise
+        uses: jdx/mise-action@v2
+      - name: Build ${{ matrix.binary }}
+        env:
+          GOOS: ${{ matrix.goos }}
+          GOARCH: ${{ matrix.goarch }}
+        run: |
+          if [ "${{ matrix.binary }}" = "gateway" ]; then
+            mise run build:gateway
+          else
+            mise run build
+          fi
+      - name: Verify binary
+        run: |
+          ls -lh dist/${{ matrix.binary }}
+          file dist/${{ matrix.binary }} || true
+      - name: Upload artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: ${{ matrix.binary }}-${{ matrix.goos }}-${{ matrix.goarch }}
+          path: dist/${{ matrix.binary }}
+          retention-days: 7
+
+  security:
+    name: Security Scan
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Set up mise
+        uses: jdx/mise-action@v2
+      - name: Run govulncheck
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
+      - name: Run gosec
+        uses: securego/gosec@master
+        with:
+          args: ./...

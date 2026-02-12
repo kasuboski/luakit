@@ -1,0 +1,7 @@
+local builder = bk.image("golang:1.22")
+local src = bk.local_("context")
+local workspace = builder:copy(src, ".", "/app")
+local built = workspace:run("go build -o /out/server ./cmd/server", { cwd = "/app" })
+local runtime = bk.image("gcr.io/distroless/static-debian12")
+local final = runtime:copy(built, "/out/server", "/server")
+bk.export(final, { entrypoint = {"/server"} })

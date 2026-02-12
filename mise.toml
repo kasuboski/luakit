@@ -1,56 +1,278 @@
-
-# # mise config files are hierarchical. mise will find all of the config files
-# # in all parent directories and merge them together.
-# # You might have a structure like:
-#
-# * ~/work/project/mise.toml   # a config file for a specific work project
-# * ~/work/mise.toml           # a config file for projects related to work
-# * ~/.config/mise/config.toml # the global config file
-# * /etc/mise/config.toml      # the system config file
-#
-# # This setup allows you to define default versions and configuration across
-# # all projects but override them for specific projects.
-#
-# # set arbitrary env vars to be used whenever in this project or subprojects
-# [env]
-# NODE_ENV = "development"
-# NPM_CONFIG_PREFIX = "~/.npm-global"
-# EDITOR = "code --wait"
-#
 [env]
-mise.file = ".env"                # load vars from a dotenv file
+GOFLAGS = "-v"
+mise.file = ".env"
+
 [tools]
+actionlint = 'latest'
+container-structure-test = 'latest'
 go = 'prefix:1.25'
+golangci-lint = 'latest'
+"aqua:LuaLS/lua-language-server" = "latest"
+shellcheck = '0.11.0'
+
+[vars]
+binary_name = "luakit"
+dist_dir = "dist"
+
+[tasks.build]
+description = "Build the binary for the current platform"
+sources = ["**/*.go", "go.mod", "go.sum"]
+outputs = ["{{vars.dist_dir}}/{{vars.binary_name}}"]
+run = '''
+set -e
+VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+GOOS="${GOOS:-$(go env GOOS)}"
+GOARCH="${GOARCH:-$(go env GOARCH)}"
+
+echo "Building {{vars.binary_name}} for $GOOS/$GOARCH..."
+mkdir -p {{vars.dist_dir}}
+go build $GOFLAGS -ldflags "-s -w -X main.version=$VERSION -X main.buildTime=$BUILD_TIME -X main.commit=$COMMIT" -o {{vars.dist_dir}}/{{vars.binary_name}} ./cmd/luakit
+echo "Binary built: {{vars.dist_dir}}/{{vars.binary_name}}"
+'''
+
+[tasks."build:linux-amd64"]
+description = "Build for Linux amd64"
+env = { GOOS = "linux", GOARCH = "amd64" }
+run = "mise run build"
+
+[tasks."build:linux-arm64"]
+description = "Build for Linux arm64"
+env = { GOOS = "linux", GOARCH = "arm64" }
+run = "mise run build"
+
+[tasks."build:darwin-amd64"]
+description = "Build for macOS amd64"
+env = { GOOS = "darwin", GOARCH = "amd64" }
+run = "mise run build"
+
+[tasks."build:darwin-arm64"]
+description = "Build for macOS arm64"
+env = { GOOS = "darwin", GOARCH = "arm64" }
+run = "mise run build"
+
+[tasks.build-all]
+description = "Build binaries for all target platforms"
+depends = ["build:linux-amd64", "build:linux-arm64", "build:darwin-amd64", "build:darwin-arm64", "build:gateway:all"]
+
+[tasks."build:gateway"]
+description = "Build the gateway binary for the current platform"
+sources = ["**/*.go", "go.mod", "go.sum"]
+outputs = ["{{vars.dist_dir}}/gateway"]
+run = '''
+set -e
+VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+GOOS="${GOOS:-$(go env GOOS)}"
+GOARCH="${GOARCH:-$(go env GOARCH)}"
+
+echo "Building gateway for $GOOS/$GOARCH..."
+mkdir -p {{vars.dist_dir}}
+go build $GOFLAGS -ldflags "-s -w -X main.version=$VERSION -X main.buildTime=$BUILD_TIME -X main.revision=$COMMIT" -o {{vars.dist_dir}}/gateway ./cmd/gateway
+echo "Gateway binary built: {{vars.dist_dir}}/gateway"
+'''
+
+[tasks."build:gateway:linux-amd64"]
+description = "Build gateway for Linux amd64"
+env = { GOOS = "linux", GOARCH = "amd64" }
+run = "mise run build:gateway"
+
+[tasks."build:gateway:linux-arm64"]
+description = "Build gateway for Linux arm64"
+env = { GOOS = "linux", GOARCH = "arm64" }
+run = "mise run build:gateway"
+
+[tasks."build:gateway:darwin-amd64"]
+description = "Build gateway for macOS amd64"
+env = { GOOS = "darwin", GOARCH = "amd64" }
+run = "mise run build:gateway"
+
+[tasks."build:gateway:darwin-arm64"]
+description = "Build gateway for macOS arm64"
+env = { GOOS = "darwin", GOARCH = "arm64" }
+run = "mise run build:gateway"
+
+[tasks."build:gateway:all"]
+description = "Build gateway binaries for all target platforms"
+depends = ["build:gateway:linux-amd64", "build:gateway:linux-arm64", "build:gateway:darwin-amd64", "build:gateway:darwin-arm64"]
+
+[tasks.checksums]
+description = "Generate SHA256 checksums for release artifacts"
+run = '''
+echo "Generating SHA256 checksums..."
+cd {{vars.dist_dir}}
+shasum -a 256 {{vars.binary_name}}-* gateway-* > checksums.txt
+echo "Checksums generated: {{vars.dist_dir}}/checksums.txt"
+'''
+
+[tasks.release]
+description = "Build release artifacts for all platforms"
+depends = ["build-all", "checksums"]
+
+[tasks.test]
+description = "Run tests"
+run = "go test -v -race -coverprofile=coverage.out -covermode=atomic ./cmd/... ./pkg/..."
+
+[tasks."golden:update"]
+description = "Regenerate golden test files"
+depends = ["build"]
+run = "scripts/update-golden.sh"
+
+[tasks."test:integration"]
+description = "Run integration tests with BuildKit"
+depends = ["build"]
+run = '''
+go test -v -timeout=15m ./test/integration/...
+'''
+
+[tasks."test:coverage"]
+description = "Generate coverage report"
+depends = ["test"]
+run = '''
+go tool cover -html=coverage.out -o coverage.html
+'''
+
+[tasks."test:docker:gateway"]
+description = "Run container structure tests on gateway image"
+run = '''
+IMAGE="${IMAGE:-{{vars.binary_name}}:latest}"
+CONFIG="test/docker/gateway.yaml"
+
+echo "Running container structure tests on $IMAGE with $CONFIG..."
+container-structure-test test --image "$IMAGE" --config "$CONFIG"
+'''
+
+[tasks."test:docker:cli"]
+description = "Run container structure tests on CLI image"
+run = '''
+IMAGE="${IMAGE:-{{vars.binary_name}}:cli}"
+CONFIG="test/docker/cli.yaml"
+
+echo "Running container structure tests on $IMAGE with $CONFIG..."
+container-structure-test test --image "$IMAGE" --config "$CONFIG"
+'''
+
+[tasks."test:docker"]
+description = "Run container structure tests on all images"
+depends = ["test:docker:gateway", "test:docker:cli"]
+
+[tasks.clean]
+description = "Clean build artifacts"
+run = '''
+echo "Cleaning build artifacts..."
+rm -rf {{vars.dist_dir}}
+rm -f coverage.out coverage.html
+echo "Clean complete"
+'''
+
+[tasks.install]
+description = "Install the binary to GOPATH/bin"
+run = '''
+set -e
+VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+echo "Installing {{vars.binary_name}} to $(go env GOPATH)/bin..."
+go install $GOFLAGS -ldflags "-s -w -X main.version=$VERSION -X main.buildTime=$BUILD_TIME -X main.commit=$COMMIT" ./cmd/luakit
+echo "Installed successfully"
+'''
+
+[tasks."install:gateway"]
+description = "Install the gateway binary to GOPATH/bin"
+run = '''
+set -e
+VERSION=$(git describe --tags --always 2>/dev/null || echo "dev")
+BUILD_TIME=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+COMMIT=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+echo "Installing gateway to $(go env GOPATH)/bin..."
+go install $GOFLAGS -ldflags "-s -w -X main.version=$VERSION -X main.buildTime=$BUILD_TIME -X main.revision=$COMMIT" ./cmd/gateway
+echo "Gateway installed successfully"
+'''
+
+[tasks."install:all"]
+description = "Install both luakit and gateway binaries"
+depends = ["install", "install:gateway"]
+
+[tasks.fmt]
+description = "Format code"
+run = "go fmt ./..."
+
+[tasks.lint]
+description = "Run all linters"
+depends = ["lint:actions", "lint:go", "lint:lua", "lint:vet"]
+
+[tasks."lint:actions"]
+description = "Run actions linter"
+run = "actionlint"
+
+[tasks."lint:go"]
+description = "Run golangci-lint"
+run = "golangci-lint run ./..."
+
+[tasks."lint:lua"]
+description = "Run LuaLS type check on Lua files"
+run = "lua-language-server --check ."
+
+[tasks."lint:vet"]
+description = "Run go vet"
+run = "go vet ./..."
+
+[tasks.benchmark]
+description = "Run benchmarks"
+run = "go test -bench=. -benchmem -benchtime=10s ./..."
+
+[tasks.run]
+description = "Build and run the binary"
+depends = ["build"]
+run = "{{vars.dist_dir}}/{{vars.binary_name}} version"
+
+[tasks."docker:build"]
+description = "Build Docker image"
+run = '''
+echo "Building Docker image..."
+docker build -t {{vars.binary_name}}:latest .
+echo "Docker image built: {{vars.binary_name}}:latest"
+'''
+
+[tasks."docker:build:gateway"]
+description = "Build gateway Docker image (BuildKit frontend)"
+run = '''
+echo "Building gateway Docker image..."
+docker build -f Dockerfile.gateway -t {{vars.binary_name}}-gateway:latest .
+echo "Gateway Docker image built: {{vars.binary_name}}-gateway:latest"
+'''
+
+[tasks."docker:run"]
+description = "Run Docker container"
+depends = ["docker:build"]
+run = "docker run --rm {{vars.binary_name}}:latest version"
+
+[tasks."buildkit:start"]
+description = "Start BuildKit daemon"
+run = "scripts/start-buildkit.sh"
+
+[tasks."buildkit:stop"]
+description = "Stop BuildKit daemon"
+run = "scripts/stop-buildkit.sh"
+
+[tasks."verify:release"]
+description = "Verify release artifacts"
+run = '''
+echo "Verifying release artifacts..."
+cd {{vars.dist_dir}}
+for artifact in {{vars.binary_name}}-* gateway-*; do
+    if [ -f "$artifact" ] && [ -x "$artifact" ]; then
+        echo "Verifying $artifact..."
+        $artifact -version || $artifact version || true
+    fi
+done
+echo "All release artifacts verified"
+'''
 
 [tasks.go-modernize]
+description = "Automatically modernize Go code"
 run = 'go run golang.org/x/tools/go/analysis/passes/modernize/cmd/modernize@latest -fix ./...'
-# mise.path = "./node_modules/.bin" # add a directory to PATH
-#
-# [tools]
-# terraform = '1.0.0'       # specify a single version
-# erlang = '26'             # specify a major version only
-# node = 'ref:master'       # build from a git ref
-# node = 'path:~/.nodes/14' # BYO – specify a non-mise managed installation
-#
-# # newest with this prefix (typically exact matches don't use the prefix)
-# go = 'prefix:1.16'
-#
-# # multiple versions will all go into PATH in the order specified
-# # this is helpful for making `python311` and `python310` available
-# # even when `python` and `python3` point to a different version
-# python = ['3.12', '3.11', '3.10']
-#
-# # some plugins can take options like python's virtualenv activation
-# # with these, mise will automatically setup and activate vevs when entering
-# # the project directory
-# python = {version='3.12', virtualenv='.venv'}
-# poetry = {version='1.7.1', pyproject='pyproject.toml'}
-#
-# [plugins]
-# # specify a custom repo url so you can install with `mise plugin add <name>`
-# # note this will only be used if the plugin is not already installed
-# python = 'https://github.com/asdf-community/asdf-python'
-#
-# [alias.node.versions]
-# # setup a custom alias so you can run `mise use -g node@work` for node-16.x
-# work = '16'

@@ -1,0 +1,6 @@
+local base = bk.image("alpine:3.19")
+local s1 = base:mkdir("/app")
+local s2 = s1:mkfile("/app/config.json", '{"key":"value"}', { mode = 0644 })
+local s3 = s2:rm("/app/config.json")
+local s4 = s3:symlink("/usr/bin/python3", "/usr/bin/python")
+bk.export(s4)

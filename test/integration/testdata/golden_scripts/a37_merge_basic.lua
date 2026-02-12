@@ -1,0 +1,6 @@
+local base = bk.image("alpine:3.19")
+local a = base:run("echo a > /a.txt")
+local b = base:run("echo b > /b.txt")
+local c = base:run("echo c > /c.txt")
+local merged = bk.merge(a, b, c)
+bk.export(merged)
