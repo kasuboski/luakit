@@ -248,8 +248,20 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Extract metadata
-        id: meta
+      - name: Extract metadata for CLI
+        id: meta-cli
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+      - name: Extract metadata for Gateway
+        id: meta-gateway
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
@@ -259,26 +271,29 @@ jobs:
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
-             type=raw,value=latest,enable={{is_default_branch}}
+            type=raw,value=latest,enable={{is_default_branch}}
       - name: Create manifests for all tags
         run: |
-          TAGS="${{ steps.meta.outputs.tags }}"
-          echo "Tags to create manifests for: $TAGS"
+          CLI_TAGS="${{ steps.meta-cli.outputs.tags }}"
+          GATEWAY_TAGS="${{ steps.meta-gateway.outputs.tags }}"
+          
+          echo "CLI tags to create manifests for: $CLI_TAGS"
+          echo "Gateway tags to create manifests for: $GATEWAY_TAGS"
           
           # Create multi-arch manifests for CLI
-          for TAG in $TAGS; do
+          for TAG in $CLI_TAGS; do
             echo "Creating CLI manifest for: $TAG"
-            docker manifest create "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG" \
-              "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG-linux-amd64" \
-              "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG-linux-arm64" || true
-            docker manifest push "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG" || true
+            docker manifest create "$TAG" \
+              "$TAG-linux-amd64" \
+              "$TAG-linux-arm64"
+            docker manifest push "$TAG"
           done
           
           # Create multi-arch manifests for Gateway
-          for TAG in $TAGS; do
+          for TAG in $GATEWAY_TAGS; do
             echo "Creating gateway manifest for: $TAG"
-            docker manifest create "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG" \
-              "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG-linux-amd64" \
-              "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG-linux-arm64" || true
-            docker manifest push "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG" || true
+            docker manifest create "$TAG" \
+              "$TAG-linux-amd64" \
+              "$TAG-linux-arm64"
+            docker manifest push "$TAG"
           done
