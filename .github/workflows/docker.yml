@@ -120,6 +120,9 @@ jobs:
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+      - name: Set sanitized platform tag
+        id: platform
+        run: echo "tag=${{ matrix.platform }}" | sed 's|/|-|g' >> "$GITHUB_OUTPUT"
       - name: Extract metadata for tags
         id: meta
         uses: docker/metadata-action@v5
@@ -136,7 +139,7 @@ jobs:
           file: Dockerfile
           platforms: ${{ matrix.platform }}
           load: true
-          tags: luakit:verify-${{ matrix.platform }}
+          tags: luakit:verify-${{ steps.platform.outputs.tag }}
           cache-from: type=gha
           provenance: false
       - name: Build CLI for verification
@@ -146,14 +149,14 @@ jobs:
           file: Dockerfile.cli
           platforms: ${{ matrix.platform }}
           load: true
-          tags: luakit-cli:verify-${{ matrix.platform }}
+          tags: luakit-cli:verify-${{ steps.platform.outputs.tag }}
           cache-from: type=gha
           provenance: false
       - name: Verify binary architecture and static linking
         run: |
           # Verify gateway binary
           TEMP_DIR=$(mktemp -d)
-          CONTAINER_ID=$(docker create "luakit:verify-${{ matrix.platform }}")
+          CONTAINER_ID=$(docker create "luakit:verify-${{ steps.platform.outputs.tag }}")
           docker cp "$CONTAINER_ID:/luakit" "$TEMP_DIR/gateway-binary"
           docker rm "$CONTAINER_ID"
           
@@ -187,7 +190,7 @@ jobs:
           fi
           
           # Verify CLI binary
-          CLI_CONTAINER=$(docker create "luakit-cli:verify-${{ matrix.platform }}")
+          CLI_CONTAINER=$(docker create "luakit-cli:verify-${{ steps.platform.outputs.tag }}")
           docker cp "$CLI_CONTAINER:/luakit" "$TEMP_DIR/cli-binary"
           docker rm "$CLI_CONTAINER"
           
@@ -221,8 +224,8 @@ jobs:
           fi
           
           rm -rf "$TEMP_DIR"
-          docker rmi "luakit:verify-${{ matrix.platform }}" || true
-          docker rmi "luakit-cli:verify-${{ matrix.platform }}" || true
+          docker rmi "luakit:verify-${{ steps.platform.outputs.tag }}" || true
+          docker rmi "luakit-cli:verify-${{ steps.platform.outputs.tag }}" || true
 
   security-scan:
     name: Security Scan

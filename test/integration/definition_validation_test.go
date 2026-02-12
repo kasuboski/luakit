@@ -19,7 +19,7 @@ bk.export(base)
 
 	pbDef := requireValidDefinition(t, def)
 
-	requireSourceOpCount(t, pbDef, 2)
+	requireSourceOpCount(t, pbDef, 1)
 
 	for _, opBytes := range pbDef.Def {
 		var op pb.Op
@@ -420,7 +420,7 @@ bk.export(base:run("ls /mnt", {
 
 	pbDef := requireValidDefinition(t, def)
 
-	requireSourceOpCount(t, pbDef, 1)
+	requireSourceOpCount(t, pbDef, 2)
 
 	for _, opBytes := range pbDef.Def {
 		var op pb.Op
