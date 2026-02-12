@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/moby/buildkit/solver/pb"
+	"google.golang.org/protobuf/proto"
 )
 
 type ProtobufWriter struct {
@@ -17,7 +18,7 @@ func NewProtobufWriter(outputPath string) *ProtobufWriter {
 }
 
 func (w *ProtobufWriter) Write(def *pb.Definition) error {
-	data, err := def.MarshalVT()
+	data, err := proto.MarshalOptions{Deterministic: true}.Marshal(def)
 	if err != nil {
 		return fmt.Errorf("failed to marshal definition: %w", err)
 	}

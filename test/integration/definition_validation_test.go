@@ -427,7 +427,7 @@ bk.export(base:run("ls /mnt", {
 		require.NoError(t, op.UnmarshalVT(opBytes))
 		if exec := op.GetExec(); exec != nil {
 			for _, mount := range exec.Mounts {
-				if mount.MountType == pb.MountType_BIND {
+				if mount.MountType == pb.MountType_BIND && mount.Dest != "/" {
 					require.Equal(t, "/mnt", mount.GetDest())
 					require.True(t, mount.GetReadonly())
 					return
