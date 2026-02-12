@@ -41,6 +41,12 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
+      - name: Set platform tag
+        id: platform
+        run: |
+          PLATFORM_TAG="${{ matrix.platform }}"
+          PLATFORM_FOR_TAG="${PLATFORM_TAG//\//-}"
+          echo "tag=$PLATFORM_FOR_TAG" >> "$GITHUB_OUTPUT"
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -54,7 +60,9 @@ jobs:
           file: Dockerfile.cli
           platforms: ${{ matrix.platform }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${{ steps.meta.outputs.version }}-${{ steps.platform.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -88,6 +96,12 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
+      - name: Set platform tag
+        id: platform
+        run: |
+          PLATFORM_TAG="${{ matrix.platform }}"
+          PLATFORM_FOR_TAG="${PLATFORM_TAG//\//-}"
+          echo "tag=$PLATFORM_FOR_TAG" >> "$GITHUB_OUTPUT"
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -101,7 +115,9 @@ jobs:
           file: Dockerfile
           platforms: ${{ matrix.platform }}
           push: true
-          tags: ${{ steps.meta.outputs.tags }}
+          tags: |
+            ${{ steps.meta.outputs.tags }}
+            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}-${{ steps.platform.outputs.tag }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
@@ -133,6 +149,12 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}
+      - name: Set platform tag
+        id: platform
+        run: |
+          PLATFORM_TAG="${{ matrix.platform }}"
+          PLATFORM_FOR_TAG="${PLATFORM_TAG//\//-}"
+          echo "tag=$PLATFORM_FOR_TAG" >> "$GITHUB_OUTPUT"
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -142,18 +164,14 @@ jobs:
       - name: Pull gateway image for verification
         run: |
           TAG="${{ steps.meta.outputs.version }}"
-          PLATFORM="${{ matrix.platform }}"
-          SANITIZED_PLATFORM="${PLATFORM//\//-}"
-          GATEWAY_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG-$SANITIZED_PLATFORM"
+          GATEWAY_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG-${{ steps.platform.outputs.tag }}"
           echo "Pulling gateway image: $GATEWAY_IMAGE"
           docker pull "$GATEWAY_IMAGE"
           docker tag "$GATEWAY_IMAGE" luakit:verify
       - name: Pull CLI image for verification
         run: |
           TAG="${{ steps.meta.outputs.version }}"
-          PLATFORM="${{ matrix.platform }}"
-          SANITIZED_PLATFORM="${PLATFORM//\//-}"
-          CLI_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG-$SANITIZED_PLATFORM"
+          CLI_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG-${{ steps.platform.outputs.tag }}"
           echo "Pulling CLI image: $CLI_IMAGE"
           docker pull "$CLI_IMAGE"
           docker tag "$CLI_IMAGE" luakit-cli:verify
@@ -193,6 +211,12 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}
+      - name: Set platform tag
+        id: platform
+        run: |
+          PLATFORM_TAG="${{ matrix.platform }}"
+          PLATFORM_FOR_TAG="${PLATFORM_TAG//\//-}"
+          echo "tag=$PLATFORM_FOR_TAG" >> "$GITHUB_OUTPUT"
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -202,7 +226,7 @@ jobs:
       - name: Run Trivy on CLI image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${{ steps.meta.outputs.version }}-${{ matrix.platform }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${{ steps.meta.outputs.version }}-${{ steps.platform.outputs.tag }}
           format: 'sarif'
           output: 'trivy-cli-results-${{ matrix.platform }}.sarif'
           severity: 'CRITICAL,HIGH'
@@ -210,7 +234,7 @@ jobs:
       - name: Run Trivy on gateway image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}-${{ matrix.platform }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}-${{ steps.platform.outputs.tag }}
           format: 'sarif'
           output: 'trivy-gateway-results-${{ matrix.platform }}.sarif'
           severity: 'CRITICAL,HIGH'
