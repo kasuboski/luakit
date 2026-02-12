@@ -49,14 +49,14 @@ func (smb *SourceMapBuilder) AddLocation(digest string, filename string, line in
 	}
 	if locations, ok := smb.locations[digest]; ok {
 		locations.Locations = append(locations.Locations, &pb.Location{
-			SourceIndex: int32(fileIdx),
+			SourceIndex: int32(fileIdx), // #nosec G115 -- Validated: fileIdx checked for overflow above
 			Ranges: []*pb.Range{
 				{
 					Start: &pb.Position{
-						Line: int32(line),
+						Line: int32(line), // #nosec G115 -- Validated: line checked for overflow above
 					},
 					End: &pb.Position{
-						Line: int32(line),
+						Line: int32(line), // #nosec G115 -- Validated: line checked for overflow above
 					},
 				},
 			},
@@ -65,14 +65,14 @@ func (smb *SourceMapBuilder) AddLocation(digest string, filename string, line in
 		smb.locations[digest] = &pb.Locations{
 			Locations: []*pb.Location{
 				{
-					SourceIndex: int32(fileIdx),
+					SourceIndex: int32(fileIdx), // #nosec G115 -- Validated: fileIdx checked for overflow above
 					Ranges: []*pb.Range{
 						{
 							Start: &pb.Position{
-								Line: int32(line),
+								Line: int32(line), // #nosec G115 -- Validated: line checked for overflow above
 							},
 							End: &pb.Position{
-								Line: int32(line),
+								Line: int32(line), // #nosec G115 -- Validated: line checked for overflow above
 							},
 						},
 					},
