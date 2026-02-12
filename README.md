@@ -84,42 +84,6 @@ luakit build -o output.pb build.lua
 
 ## BuildKit Daemon Setup
 
-### Installation
-
-**From pre-built binaries (Recommended):**
-
-Download from the [Releases](https://github.com/kasuboski/luakit/releases) page for your platform:
-
-```bash
-# Linux AMD64
-wget https://github.com/kasuboski/luakit/releases/download/v0.1.0/luakit-0.1.0-linux-amd64
-chmod +x luakit-0.1.0-linux-amd64
-sudo mv luakit-0.1.0-linux-amd64 /usr/local/bin/luakit
-
-# macOS (Intel or Apple Silicon)
-curl -L -O https://github.com/kasuboski/luakit/releases/download/v0.1.0/luakit-0.1.0-darwin-$(uname -m)
-chmod +x luakit-0.1.0-darwin-$(uname -m)
-sudo mv luakit-0.1.0-darwin-$(uname -m) /usr/local/bin/luakit
-```
-
-**With Homebrew:**
-
-```bash
-brew install https://github.com/kasuboski/luakit/releases/download/v0.1.0/luakit.rb
-```
-
-**With Go:**
-
-```bash
-# Install CLI binary
-go install github.com/kasuboski/luakit/cmd/luakit@latest
-
-# Install gateway binary (for BuildKit frontend mode)
-go install github.com/kasuboski/luakit/cmd/gateway@latest
-```
-
-## BuildKit Daemon Setup
-
 Luakit requires BuildKit for executing builds. The BuildKit worker configuration is important for compatibility, especially when running in virtualized environments like Lima.
 
 ### Lima VM (macOS with Docker Desktop)
