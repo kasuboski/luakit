@@ -61,7 +61,7 @@ func main() {
 	case "version", "--version", "-v":
 		fmt.Printf("luakit %s\n", version)
 	default:
-		fmt.Fprintf(os.Stderr, "unknown command: %s\n", command)
+		fmt.Fprintf(os.Stderr, "unknown command: %s\n", command) // #nosec G705 -- CLI tool output to stderr
 		printUsage()
 		os.Exit(1)
 	}
@@ -113,7 +113,7 @@ func parseBuildFlags() *buildFlags {
 		switch arg {
 		case "--output", "-o":
 			if i+1 >= len(args) {
-				fmt.Fprintf(os.Stderr, "error: %s requires a value\n", arg)
+				fmt.Fprintf(os.Stderr, "error: %s requires a value\n", arg) // #nosec G705 -- CLI tool output to stderr
 				os.Exit(1)
 			}
 			flags.outputPath = args[i+1]
@@ -149,7 +149,7 @@ EXAMPLES:
 			os.Exit(0)
 		default:
 			if arg[0] == '-' {
-				fmt.Fprintf(os.Stderr, "error: unknown flag: %s\n", arg)
+				fmt.Fprintf(os.Stderr, "error: unknown flag: %s\n", arg) // #nosec G705 -- CLI tool output to stderr
 				os.Exit(1)
 			}
 			i++
@@ -257,7 +257,7 @@ func parseDagFlags() *dagFlags {
 			i += 1
 		case arg == "--output" || arg == "-o":
 			if i+1 >= len(args) {
-				fmt.Fprintf(os.Stderr, "error: %s requires a value\n", arg)
+				fmt.Fprintf(os.Stderr, "error: %s requires a value\n", arg) // #nosec G705 -- CLI tool output to stderr
 				os.Exit(1)
 			}
 			flags.outputPath = args[i+1]
@@ -303,7 +303,7 @@ USAGE:
 			os.Exit(0)
 		default:
 			if arg[0] == '-' {
-				fmt.Fprintf(os.Stderr, "error: unknown flag: %s\n", arg)
+				fmt.Fprintf(os.Stderr, "error: unknown flag: %s\n", arg) // #nosec G705 -- CLI tool output to stderr
 				os.Exit(1)
 			}
 			i++

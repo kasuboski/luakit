@@ -46,7 +46,7 @@ func Evaluate(r io.Reader, filename string, config *VMConfig) (*EvalResult, erro
 }
 
 func EvaluateFile(path string, config *VMConfig) (*EvalResult, error) {
-	f, err := os.Open(path)
+	f, err := os.Open(path) // #nosec G304 -- Path is user-provided script path for build tool
 	if err != nil {
 		return nil, fmt.Errorf("failed to open file: %w", err)
 	}

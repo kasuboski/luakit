@@ -76,7 +76,7 @@ func setupModuleLoader(L *lua.LState, config *VMConfig) {
 		var moduleData []byte
 		var moduleFile string
 		for _, path := range searchPaths {
-			data, err := os.ReadFile(path)
+			data, err := os.ReadFile(path) // #nosec G304 -- Path is from trusted build context or stdlib directory
 			if err == nil {
 				moduleData = data
 				moduleFile = path

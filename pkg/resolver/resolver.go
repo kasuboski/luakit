@@ -132,7 +132,7 @@ type authEntry struct {
 
 // readDockerConfig reads and parses a Docker config file
 func readDockerConfig(path string) (*dockerConfig, error) {
-	data, err := os.ReadFile(path)
+	data, err := os.ReadFile(path) // #nosec G304,G703 -- Path is from trusted Docker config locations
 	if err != nil {
 		return nil, err
 	}

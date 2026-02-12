@@ -30,7 +30,7 @@ type HTTPOptions struct {
 	Mode     int32
 	Headers  map[string]string
 	Username string
-	Password string
+	Password string // #nosec G117 -- Password field for HTTP basic auth, not a hard-coded secret
 }
 
 type ImageOptions struct {

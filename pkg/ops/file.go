@@ -262,6 +262,9 @@ func buildChownOpt(opt *ChownOpt) *pb.ChownOpt {
 				},
 			}
 		} else if opt.User.ID != 0 {
+			if opt.User.ID < 0 || opt.User.ID > int64(^uint32(0)) {
+				return nil
+			}
 			chown.User = &pb.UserOpt{
 				User: &pb.UserOpt_ByID{
 					ByID: uint32(opt.User.ID),
@@ -280,6 +283,9 @@ func buildChownOpt(opt *ChownOpt) *pb.ChownOpt {
 				},
 			}
 		} else if opt.Group.ID != 0 {
+			if opt.Group.ID < 0 || opt.Group.ID > int64(^uint32(0)) {
+				return nil
+			}
 			chown.Group = &pb.UserOpt{
 				User: &pb.UserOpt_ByID{
 					ByID: uint32(opt.Group.ID),

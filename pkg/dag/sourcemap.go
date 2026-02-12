@@ -44,6 +44,9 @@ func (smb *SourceMapBuilder) AddLocation(digest string, filename string, line in
 		return
 	}
 
+	if fileIdx < 0 || fileIdx > int(^uint32(0)) || line < 0 || line > int(^uint32(0)) {
+		return
+	}
 	if locations, ok := smb.locations[digest]; ok {
 		locations.Locations = append(locations.Locations, &pb.Location{
 			SourceIndex: int32(fileIdx),
