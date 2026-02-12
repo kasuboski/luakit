@@ -15,20 +15,14 @@ env:
 
 jobs:
   build-cli:
-    name: Build CLI Image (${{ matrix.platform }})
-    runs-on: ${{ matrix.runs-on }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: linux/amd64
-            runs-on: ubuntu-24.04
-          - platform: linux/arm64
-            runs-on: ubuntu-24.04-arm
+    name: Build CLI Multi-Arch Images
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -41,50 +35,34 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-      - name: Set platform tag
-        id: platform
-        run: |
-          PLATFORM_TAG="${{ matrix.platform }}"
-          PLATFORM_FOR_TAG="${PLATFORM_TAG//\//-}"
-          echo "tag=$PLATFORM_FOR_TAG" >> "$GITHUB_OUTPUT"
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push CLI image
+      - name: Build and push multi-arch CLI images
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile.cli
-          platforms: ${{ matrix.platform }}
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${{ steps.meta.outputs.version }}-${{ steps.platform.outputs.tag }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            TARGETPLATFORM=${{ matrix.platform }}
-          provenance: false
-          sbom: false
+          sbom: true
 
   build-gateway:
-    name: Build Gateway Image (${{ matrix.platform }})
-    runs-on: ${{ matrix.runs-on }}
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - platform: linux/amd64
-            runs-on: ubuntu-24.04
-          - platform: linux/arm64
-            runs-on: ubuntu-24.04-arm
+    name: Build Gateway Multi-Arch Images
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v6
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+        with:
+          platforms: linux/amd64,linux/arm64
       - name: Extract metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -97,53 +75,52 @@ jobs:
             type=semver,pattern={{major}}.{{minor}}
             type=semver,pattern={{major}}
             type=raw,value=latest,enable={{is_default_branch}}
-      - name: Set platform tag
-        id: platform
-        run: |
-          PLATFORM_TAG="${{ matrix.platform }}"
-          PLATFORM_FOR_TAG="${PLATFORM_TAG//\//-}"
-          echo "tag=$PLATFORM_FOR_TAG" >> "$GITHUB_OUTPUT"
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push gateway image
+      - name: Build and push multi-arch gateway images
         uses: docker/build-push-action@v6
         with:
           context: .
           file: Dockerfile
-          platforms: ${{ matrix.platform }}
+          platforms: linux/amd64,linux/arm64
           push: true
-          tags: |
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}-${{ steps.platform.outputs.tag }}
+          tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
-          build-args: |
-            TARGETPLATFORM=${{ matrix.platform }}
-          provenance: false
-          sbom: false
+          sbom: true
 
   verify:
     name: Verify Images (${{ matrix.platform }})
     needs: [build-cli, build-gateway]
-    runs-on: ${{ matrix.runs-on }}
+    runs-on: ${{ matrix.runner }}
     strategy:
       fail-fast: false
       matrix:
         include:
           - platform: linux/amd64
-            runs-on: ubuntu-24.04
+            runner: ubuntu-24.04
           - platform: linux/arm64
-            runs-on: ubuntu-24.04-arm
+            runner: ubuntu-24.04-arm
     steps:
       - uses: actions/checkout@v6
       - name: Install mise
         uses: jdx/mise-action@v2
       - name: Extract metadata for tags
-        id: meta
+        id: meta-cli
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+      - name: Extract metadata for gateway
+        id: meta-gateway
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
@@ -151,12 +128,6 @@ jobs:
             type=ref,event=branch
             type=ref,event=pr
             type=semver,pattern={{version}}
-      - name: Set platform tag
-        id: platform
-        run: |
-          PLATFORM_TAG="${{ matrix.platform }}"
-          PLATFORM_FOR_TAG="${PLATFORM_TAG//\//-}"
-          echo "tag=$PLATFORM_FOR_TAG" >> "$GITHUB_OUTPUT"
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -165,17 +136,17 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Pull gateway image for verification
         run: |
-          TAG="${{ steps.meta.outputs.version }}"
-          GATEWAY_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG-${{ steps.platform.outputs.tag }}"
-          echo "Pulling gateway image: $GATEWAY_IMAGE"
-          docker pull "$GATEWAY_IMAGE"
+          TAG="${{ steps.meta-gateway.outputs.version }}"
+          GATEWAY_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:$TAG"
+          echo "Pulling gateway image: $GATEWAY_IMAGE (${{ matrix.platform }})"
+          docker pull --platform ${{ matrix.platform }} "$GATEWAY_IMAGE"
           docker tag "$GATEWAY_IMAGE" luakit:verify
       - name: Pull CLI image for verification
         run: |
-          TAG="${{ steps.meta.outputs.version }}"
-          CLI_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG-${{ steps.platform.outputs.tag }}"
-          echo "Pulling CLI image: $CLI_IMAGE"
-          docker pull "$CLI_IMAGE"
+          TAG="${{ steps.meta-cli.outputs.version }}"
+          CLI_IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:$TAG"
+          echo "Pulling CLI image: $CLI_IMAGE (${{ matrix.platform }})"
+          docker pull --platform ${{ matrix.platform }} "$CLI_IMAGE"
           docker tag "$CLI_IMAGE" luakit-cli:verify
       - name: Verify gateway image structure
         run: mise run test:docker:gateway
@@ -194,22 +165,30 @@ jobs:
   security-scan:
     name: Security Scan (${{ matrix.platform }})
     needs: [build-cli, build-gateway]
-    runs-on: ${{ matrix.runs-on }}
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        include:
-          - platform: linux/amd64
-            runs-on: ubuntu-24.04
-          - platform: linux/arm64
-            runs-on: ubuntu-24.04-arm
+        platform: [linux/amd64, linux/arm64]
     steps:
-      - name: Set platform tag
-        id: platform
-        run: |
-          PLATFORM_TAG="${{ matrix.platform }}"
-          PLATFORM_FOR_TAG="${PLATFORM_TAG//\//-}"
-          echo "tag=$PLATFORM_FOR_TAG" >> "$GITHUB_OUTPUT"
+      - name: Extract metadata for tags
+        id: meta-cli
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+      - name: Extract metadata for gateway
+        id: meta-gateway
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
@@ -225,77 +204,16 @@ jobs:
         run: |
           trivy image --platform ${{ matrix.platform }} \
             --format sarif \
-            --output 'trivy-cli-results-${{ steps.platform.outputs.tag }}.sarif' \
+            --output "trivy-cli-results-${{ matrix.platform }}.sarif" \
             --severity CRITICAL,HIGH \
             --exit-code 1 \
-            '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${{ github.ref_name }}-${{ steps.platform.outputs.tag }}'
+            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${{ steps.meta-cli.outputs.version }}"
       - name: Run Trivy on gateway image
         run: |
           trivy image --platform ${{ matrix.platform }} \
             --format sarif \
-            --output 'trivy-gateway-results-${{ steps.platform.outputs.tag }}.sarif' \
+            --output "trivy-gateway-results-${{ matrix.platform }}.sarif" \
             --severity CRITICAL,HIGH \
             --exit-code 1 \
-            '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-${{ steps.platform.outputs.tag }}'
+            "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta-gateway.outputs.version }}"
 
-  create-manifests:
-    name: Create Multi-Arch Manifests
-    needs: [build-cli, build-gateway, verify, security-scan]
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Login to GHCR
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Extract metadata for CLI
-        id: meta-cli
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value=latest,enable={{is_default_branch}}
-      - name: Extract metadata for Gateway
-        id: meta-gateway
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=semver,pattern={{major}}
-            type=raw,value=latest,enable={{is_default_branch}}
-      - name: Create manifests for all tags
-        run: |
-          CLI_TAGS="${{ steps.meta-cli.outputs.tags }}"
-          GATEWAY_TAGS="${{ steps.meta-gateway.outputs.tags }}"
-          
-          echo "CLI tags to create manifests for: $CLI_TAGS"
-          echo "Gateway tags to create manifests for: $GATEWAY_TAGS"
-          
-          # Create multi-arch manifests for CLI
-          for TAG in $CLI_TAGS; do
-            echo "Creating CLI manifest for: $TAG"
-            docker manifest create "$TAG" \
-              "$TAG-linux-amd64" \
-              "$TAG-linux-arm64"
-            docker manifest push "$TAG"
-          done
-          
-          # Create multi-arch manifests for Gateway
-          for TAG in $GATEWAY_TAGS; do
-            echo "Creating gateway manifest for: $TAG"
-            docker manifest create "$TAG" \
-              "$TAG-linux-amd64" \
-              "$TAG-linux-arm64"
-            docker manifest push "$TAG"
-          done
