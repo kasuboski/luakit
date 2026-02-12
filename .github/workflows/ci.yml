@@ -141,10 +141,7 @@ jobs:
       - name: Set up mise
         uses: jdx/mise-action@v2
       - name: Run govulncheck
-        run: |
-          go install golang.org/x/vuln/cmd/govulncheck@latest
-          export PATH="$HOME/go/bin:$PATH"
-          govulncheck ./...
+        run: go run golang.org/x/vuln/cmd/govulncheck@latest ./...
       - name: Run gosec
         uses: securego/gosec@master
         with:
