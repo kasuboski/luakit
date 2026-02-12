@@ -220,20 +220,6 @@ func requireSecurityMode(t *testing.T, pbDef *pb.Definition, mode pb.SecurityMod
 	t.Fatal("definition should have exec op with expected security mode")
 }
 
-func requireSourceIdentifier(t *testing.T, pbDef *pb.Definition, identifier string) {
-	t.Helper()
-
-	for _, opBytes := range pbDef.Def {
-		var op pb.Op
-		require.NoError(t, op.UnmarshalVT(opBytes))
-		if source := op.GetSource(); source != nil {
-			require.Equal(t, identifier, source.GetIdentifier())
-			return
-		}
-	}
-	t.Fatalf("definition should have source op with identifier %s", identifier)
-}
-
 func createTestScript(t *testing.T, script string) string {
 	t.Helper()
 

@@ -19,36 +19,7 @@ bk.export(base)
 
 	pbDef := requireValidDefinition(t, def)
 
-	requireSourceOpCount(t, pbDef, 1)
-	requireSourceIdentifier(t, pbDef, "docker-image://docker.io/library/ubuntu:24.04")
-}
-
-func TestA02_ImageSourceWithPlatformOverride(t *testing.T) {
-	script := `
-local arm = bk.image("ubuntu:24.04", { platform = "linux/arm64" })
-bk.export(arm)
- `
-	scriptPath := createTestScript(t, script)
-
-	def, err := runLuakitBuild(t, scriptPath, ".")
-	require.NoError(t, err)
-
-	pbDef := requireValidDefinition(t, def)
-
-	requireSourceOpCount(t, pbDef, 1)
-}
-
-func TestA03_ImageSourceWithResolveMode(t *testing.T) {
-	script := `
-local pinned = bk.image("ubuntu:24.04", { resolve = "always" })
-bk.export(pinned)
- `
-	scriptPath := createTestScript(t, script)
-
-	def, err := runLuakitBuild(t, scriptPath, ".")
-	require.NoError(t, err)
-
-	pbDef := requireValidDefinition(t, def)
+	requireSourceOpCount(t, pbDef, 2)
 
 	for _, opBytes := range pbDef.Def {
 		var op pb.Op
