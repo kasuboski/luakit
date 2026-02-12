@@ -17,6 +17,7 @@ We are implementing the plan in @SPEC.md
 * Use `mise run lint:go` to run golangci-lint.
 * Use `mise run lint:lua` to type check Lua files.
 * Use `mise run lint:vet` to run go vet.
+* Use `mise run lint:actions` to lint GitHub Actions workflows.
 
 ## Type Definitions
 * Lua editor type definitions are in `types/` directory

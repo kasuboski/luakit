@@ -26,7 +26,7 @@ jobs:
           - platform: linux/arm64
             runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Extract metadata
@@ -73,7 +73,7 @@ jobs:
           - platform: linux/arm64
             runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
       - name: Extract metadata
@@ -121,7 +121,7 @@ jobs:
           - platform: linux/arm64
             runs-on: ubuntu-24.04-arm
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Install mise
         uses: jdx/mise-action@v2
       - name: Extract metadata for tags
@@ -221,7 +221,7 @@ jobs:
     needs: [build-cli, build-gateway, verify, security-scan]
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Login to GHCR
         uses: docker/login-action@v3
         with:
