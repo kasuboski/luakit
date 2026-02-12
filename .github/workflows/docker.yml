@@ -169,7 +169,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [linux/amd64, linux/arm64]
+        include:
+          - platform: linux/amd64
+            output-suffix: amd64
+          - platform: linux/arm64
+            output-suffix: arm64
     steps:
       - name: Extract metadata for tags
         id: meta-cli
@@ -204,7 +208,7 @@ jobs:
         run: |
           trivy image --platform ${{ matrix.platform }} \
             --format sarif \
-            --output "trivy-cli-results-${{ matrix.platform }}.sarif" \
+            --output "trivy-cli-results-${{ matrix.output-suffix }}.sarif" \
             --severity CRITICAL,HIGH \
             --exit-code 1 \
             "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${{ steps.meta-cli.outputs.version }}"
@@ -212,7 +216,7 @@ jobs:
         run: |
           trivy image --platform ${{ matrix.platform }} \
             --format sarif \
-            --output "trivy-gateway-results-${{ matrix.platform }}.sarif" \
+            --output "trivy-gateway-results-${{ matrix.output-suffix }}.sarif" \
             --severity CRITICAL,HIGH \
             --exit-code 1 \
             "${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta-gateway.outputs.version }}"
