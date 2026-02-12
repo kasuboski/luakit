@@ -15,22 +15,8 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  setup:
-    name: Setup Environment
-    runs-on: ubuntu-latest
-    outputs:
-      cache-key: ${{ steps.cache.outputs.key }}
-    steps:
-      - uses: actions/checkout@v6
-      - name: Set up mise
-        uses: jdx/mise-action@v2
-      - name: Cache mise
-        id: cache
-        run: echo "key=${{ runner.os }}-mise-${{ hashFiles('mise.toml') }}" >> "$GITHUB_OUTPUT"
-
   lint:
     name: Lint (${{ matrix.target }})
-    needs: setup
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false

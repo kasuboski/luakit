@@ -202,15 +202,6 @@ jobs:
           - platform: linux/arm64
             runs-on: ubuntu-24.04-arm
     steps:
-      - name: Extract metadata for tags
-        id: meta
-        uses: docker/metadata-action@v5
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=ref,event=pr
-            type=semver,pattern={{version}}
       - name: Set platform tag
         id: platform
         run: |
@@ -226,7 +217,7 @@ jobs:
       - name: Run Trivy on CLI image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${{ steps.meta.outputs.version }}-${{ steps.platform.outputs.tag }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-cli:${{ github.ref_name }}-${{ steps.platform.outputs.tag }}
           format: 'sarif'
           output: 'trivy-cli-results-${{ steps.platform.outputs.tag }}.sarif'
           severity: 'CRITICAL,HIGH'
@@ -234,7 +225,7 @@ jobs:
       - name: Run Trivy on gateway image
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}-${{ steps.platform.outputs.tag }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.ref_name }}-${{ steps.platform.outputs.tag }}
           format: 'sarif'
           output: 'trivy-gateway-results-${{ steps.platform.outputs.tag }}.sarif'
           severity: 'CRITICAL,HIGH'
