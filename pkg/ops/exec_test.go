@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	pb "github.com/moby/buildkit/solver/pb"
+	"github.com/stretchr/testify/require"
 )
 
 func TestNewExecOp(t *testing.T) {
@@ -377,4 +378,50 @@ func TestMergeEnv(t *testing.T) {
 			}
 		})
 	}
+}
+
+// TestNewExecStateWithOpts_AddsRootfsMount verifies that all exec operations have a rootfs mount.
+// This is REQUIRED by BuildKit - the validation in BuildKit explicitly checks that every
+// exec operation has a mount with Dest="/" and will reject operations without it with
+// the error "invalid exec op with no rootfs". Additionally, BuildKit assumes the rootfs
+// mount is at index 0. The automatic rootfs mount logic is implemented in NewExecStateWithOpts.
+func TestNewExecStateWithOpts_AddsRootfsMount(t *testing.T) {
+	sourceOp := NewSourceOp("docker-image://alpine:3.19", nil)
+	sourceState := NewSourceState(sourceOp, "test.lua", 10)
+
+	t.Run("exec with no mounts adds rootfs", func(t *testing.T) {
+		execOp := NewExecOp([]string{"echo", "hello"}, nil)
+		execState := NewExecState(sourceState, execOp, "test.lua", 20)
+
+		require.NotNil(t, execState)
+		pbOp := execState.Op().Op().GetExec()
+		require.NotNil(t, pbOp)
+		require.Len(t, pbOp.Mounts, 1, "exec op should have exactly one mount (rootfs)")
+
+		rootfsMount := pbOp.Mounts[0]
+		require.Equal(t, "/", rootfsMount.GetDest(), "first mount should be rootfs at /")
+		require.Equal(t, pb.MountType_BIND, rootfsMount.GetMountType(), "rootfs should be BIND type")
+		require.Equal(t, int64(0), rootfsMount.GetInput(), "rootfs should reference input index 0")
+		require.False(t, rootfsMount.GetReadonly(), "rootfs should not be readonly")
+	})
+
+	t.Run("exec with existing mounts prepends rootfs", func(t *testing.T) {
+		cacheMount := CacheMount("/cache", nil)
+		opts := &ExecOptions{Mounts: []*Mount{cacheMount}}
+		execState := Run(sourceState, []string{"echo", "test"}, opts, "test.lua", 30)
+
+		require.NotNil(t, execState)
+		pbOp := execState.Op().Op().GetExec()
+		require.NotNil(t, pbOp)
+		require.Len(t, pbOp.Mounts, 2, "exec op should have 2 mounts (rootfs + cache)")
+
+		rootfsMount := pbOp.Mounts[0]
+		require.Equal(t, "/", rootfsMount.GetDest(), "first mount should be rootfs at /")
+		require.Equal(t, pb.MountType_BIND, rootfsMount.GetMountType(), "rootfs should be BIND type")
+		require.Equal(t, int64(0), rootfsMount.GetInput(), "rootfs should reference input index 0")
+
+		cachePbMount := pbOp.Mounts[1]
+		require.Equal(t, "/cache", cachePbMount.GetDest(), "second mount should be cache mount")
+		require.Equal(t, pb.MountType_CACHE, cachePbMount.GetMountType(), "second mount should be CACHE type")
+	})
 }
