@@ -10,8 +10,8 @@ fileExistenceTests:
     isExecutableBy: "any"
 
 commandTests:
-  - name: "luakit binary is executable and returns version"
+  - name: "luakit gateway binary is executable and returns version"
     command: "/luakit"
-    args: ["version"]
+    args: ["-version"]
     expectedOutput: [".*"]
     exitCode: 0
