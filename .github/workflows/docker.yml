@@ -67,6 +67,8 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             TARGETPLATFORM=${{ matrix.platform }}
+          provenance: false
+          sbom: false
 
   build-gateway:
     name: Build Gateway Image (${{ matrix.platform }})
@@ -121,6 +123,8 @@ jobs:
           cache-to: type=gha,mode=max
           build-args: |
             TARGETPLATFORM=${{ matrix.platform }}
+          provenance: false
+          sbom: false
 
   verify:
     name: Verify Images (${{ matrix.platform }})
