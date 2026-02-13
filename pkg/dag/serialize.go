@@ -237,6 +237,7 @@ func propagateWalk(node *OpNode, visited map[string]bool) {
 	config := findImageConfigForExec(node)
 	if applyImageConfigToExec(exec, config) {
 		node.InvalidateDigest()
+		visited[node.DigestString()] = true
 	}
 }
 
@@ -303,24 +304,35 @@ func applyImageConfigToExec(exec *pb.ExecOp, config *ImageConfig) bool {
 }
 
 // mergeEnv merges environment variables, with user env taking precedence.
+// The result preserves the order of keys: imageEnv keys first, then new userEnv keys.
 func mergeEnv(imageEnv, userEnv []string) []string {
 	envMap := make(map[string]string)
+	var keyOrder []string
+	seen := make(map[string]bool)
 
 	for _, e := range imageEnv {
 		if key, val := splitEnv(e); key != "" {
+			if !seen[key] {
+				keyOrder = append(keyOrder, key)
+				seen[key] = true
+			}
 			envMap[key] = val
 		}
 	}
 
 	for _, e := range userEnv {
 		if key, val := splitEnv(e); key != "" {
+			if !seen[key] {
+				keyOrder = append(keyOrder, key)
+				seen[key] = true
+			}
 			envMap[key] = val
 		}
 	}
 
-	result := make([]string, 0, len(envMap))
-	for k, v := range envMap {
-		result = append(result, k+"="+v)
+	result := make([]string, 0, len(keyOrder))
+	for _, k := range keyOrder {
+		result = append(result, k+"="+envMap[k])
 	}
 
 	return result

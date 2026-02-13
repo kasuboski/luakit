@@ -19,9 +19,22 @@ func NewGatewayResolver(client gwclient.Client) *GatewayResolver {
 	return &GatewayResolver{client: client}
 }
 
+func stripPrefix(ref string) string {
+	ref = stripDockerImagePrefix(ref)
+	ref = stripOCILayoutPrefix(ref)
+	return ref
+}
+
+func stripDockerImagePrefix(ref string) string {
+	return strings.TrimPrefix(ref, "docker-image://")
+}
+
+func stripOCILayoutPrefix(ref string) string {
+	return strings.TrimPrefix(ref, "oci-layout://")
+}
+
 func (r *GatewayResolver) Resolve(ctx context.Context, ref string, platform ocispec.Platform) (*ImageConfig, error) {
-	ref = strings.TrimPrefix(ref, "docker-image://")
-	ref = strings.TrimPrefix(ref, "oci-layout://")
+	ref = stripPrefix(ref)
 
 	opt := sourceresolver.Opt{
 		ImageOpt: &sourceresolver.ResolveImageOpt{

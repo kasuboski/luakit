@@ -23,25 +23,3 @@ func TestGatewayResolverPrefixStripping(t *testing.T) {
 		}
 	}
 }
-
-func stripPrefix(ref string) string {
-	ref = stripDockerImagePrefix(ref)
-	ref = stripOCILayoutPrefix(ref)
-	return ref
-}
-
-func stripDockerImagePrefix(ref string) string {
-	const prefix = "docker-image://"
-	if len(ref) >= len(prefix) && ref[:len(prefix)] == prefix {
-		return ref[len(prefix):]
-	}
-	return ref
-}
-
-func stripOCILayoutPrefix(ref string) string {
-	const prefix = "oci-layout://"
-	if len(ref) >= len(prefix) && ref[:len(prefix)] == prefix {
-		return ref[len(prefix):]
-	}
-	return ref
-}
