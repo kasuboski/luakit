@@ -15,11 +15,11 @@ import (
 type SerializeOptions struct {
 	ImageConfig *dockerspec.DockerOCIImage
 	SourceFiles map[string][]byte
-	Resolver    *resolver.Resolver
+	Resolver    resolver.Interface
 }
 
 // resolveImageConfigs walks the DAG and resolves image configs for SourceOps.
-func resolveImageConfigs(ctx context.Context, state *State, reslv *resolver.Resolver) error {
+func resolveImageConfigs(ctx context.Context, state *State, reslv resolver.Interface) error {
 	visited := make(map[string]bool)
 
 	var walkAndResolve func(*OpNode) error
@@ -102,6 +102,11 @@ func Serialize(state *State, opts *SerializeOptions) (*pb.Definition, error) {
 		}
 	}
 
+	// Always propagate ImageConfig through the DAG and apply to ExecOps.
+	// This ensures ExecOps get WorkingDir/Env from base images,
+	// or default cwd to "/" if no config available.
+	propagateImageConfigs(state)
+
 	if err := walk(state.Op(), visited, def, smb); err != nil {
 		return nil, err
 	}
@@ -164,6 +169,9 @@ func walk(node *OpNode, visited map[string]bool, def *pb.Definition, smb *Source
 
 	populateInputDigests(node)
 
+	node.InvalidateDigest()
+	dig = node.DigestString()
+
 	dt, err := node.MarshalOp()
 	if err != nil {
 		return err
@@ -199,4 +207,131 @@ func populateInputDigests(node *OpNode) {
 		op.Inputs[i].Digest = inputDigest
 		op.Inputs[i].Index = int64(edge.outputIndex)
 	}
+}
+
+// propagateImageConfigs walks the DAG and propagates image configs from SourceOps to ExecOps.
+// For each ExecOp, it finds the image config from the root mount input and applies
+// WorkingDir and Env to the ExecOp's Meta. User-specified values take precedence.
+func propagateImageConfigs(state *State) {
+	visited := make(map[string]bool)
+	propagateWalk(state.Op(), visited)
+}
+
+// propagateWalk recursively walks the DAG and propagates image configs to ExecOps.
+func propagateWalk(node *OpNode, visited map[string]bool) {
+	dig := node.DigestString()
+	if visited[dig] {
+		return
+	}
+	visited[dig] = true
+
+	for _, edge := range node.Inputs() {
+		propagateWalk(edge.Node(), visited)
+	}
+
+	exec := node.Op().GetExec()
+	if exec == nil {
+		return
+	}
+
+	config := findImageConfigForExec(node)
+	if applyImageConfigToExec(exec, config) {
+		node.InvalidateDigest()
+	}
+}
+
+// findImageConfigForExec finds the image config from the root mount of an ExecOp.
+func findImageConfigForExec(node *OpNode) *ImageConfig {
+	exec := node.Op().GetExec()
+	if exec == nil {
+		return nil
+	}
+
+	for _, mount := range exec.Mounts {
+		if mount.Dest == "/" && mount.Input >= 0 && int(mount.Input) < len(node.Inputs()) {
+			input := node.Inputs()[mount.Input]
+			return findImageConfigFromNode(input.Node())
+		}
+	}
+
+	if len(node.Inputs()) > 0 {
+		return findImageConfigFromNode(node.Inputs()[0].Node())
+	}
+
+	return nil
+}
+
+// findImageConfigFromNode recursively finds an image config from a node.
+func findImageConfigFromNode(node *OpNode) *ImageConfig {
+	if config := node.ImageConfig(); config != nil {
+		return config
+	}
+
+	if len(node.Inputs()) > 0 {
+		return findImageConfigFromNode(node.Inputs()[0].Node())
+	}
+
+	return nil
+}
+
+// applyImageConfigToExec applies image config to an ExecOp's Meta.
+// User-specified values (Cwd, Env) take precedence over image config values.
+// Returns true if changes were made.
+func applyImageConfigToExec(exec *pb.ExecOp, config *ImageConfig) bool {
+	if exec.Meta == nil {
+		exec.Meta = &pb.Meta{}
+	}
+
+	changed := false
+
+	if exec.Meta.Cwd == "" {
+		if config != nil && config.Config != nil && config.Config.Config.WorkingDir != "" {
+			exec.Meta.Cwd = config.Config.Config.WorkingDir
+			changed = true
+		} else {
+			exec.Meta.Cwd = "/"
+			changed = true
+		}
+	}
+
+	if config != nil && config.Config != nil && len(config.Config.Config.Env) > 0 {
+		exec.Meta.Env = mergeEnv(config.Config.Config.Env, exec.Meta.Env)
+		changed = true
+	}
+
+	return changed
+}
+
+// mergeEnv merges environment variables, with user env taking precedence.
+func mergeEnv(imageEnv, userEnv []string) []string {
+	envMap := make(map[string]string)
+
+	for _, e := range imageEnv {
+		if key, val := splitEnv(e); key != "" {
+			envMap[key] = val
+		}
+	}
+
+	for _, e := range userEnv {
+		if key, val := splitEnv(e); key != "" {
+			envMap[key] = val
+		}
+	}
+
+	result := make([]string, 0, len(envMap))
+	for k, v := range envMap {
+		result = append(result, k+"="+v)
+	}
+
+	return result
+}
+
+// splitEnv splits an environment variable into key and value.
+func splitEnv(env string) (string, string) {
+	for i := 0; i < len(env); i++ {
+		if env[i] == '=' {
+			return env[:i], env[i+1:]
+		}
+	}
+	return env, ""
 }

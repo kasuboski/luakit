@@ -8,6 +8,7 @@ import (
 
 	"github.com/kasuboski/luakit/pkg/dag"
 	"github.com/kasuboski/luakit/pkg/luavm"
+	"github.com/kasuboski/luakit/pkg/resolver"
 	"github.com/moby/buildkit/client/llb"
 	gwclient "github.com/moby/buildkit/frontend/gateway/client"
 	"github.com/moby/buildkit/solver/pb"
@@ -62,9 +63,12 @@ func Build(ctx context.Context, c gwclient.Client, opts ...BuildOpt) (*gwclient.
 		return nil, fmt.Errorf("no bk.export() call — nothing to build")
 	}
 
+	gwResolver := resolver.NewGatewayResolver(c)
+
 	def, err := dag.Serialize(result.State, &dag.SerializeOptions{
 		ImageConfig: result.ImageConfig,
 		SourceFiles: result.SourceFiles,
+		Resolver:    gwResolver,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("failed to serialize definition: %w", err)
