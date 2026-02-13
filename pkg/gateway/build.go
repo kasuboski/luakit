@@ -11,8 +11,6 @@ import (
 	"github.com/kasuboski/luakit/pkg/resolver"
 	"github.com/moby/buildkit/client/llb"
 	gwclient "github.com/moby/buildkit/frontend/gateway/client"
-	"github.com/moby/buildkit/solver/pb"
-	"github.com/moby/buildkit/util/apicaps"
 )
 
 const (
@@ -39,12 +37,6 @@ func Build(ctx context.Context, c gwclient.Client, opts ...BuildOpt) (*gwclient.
 		opt(options)
 	}
 
-	buildOpts := c.BuildOpts()
-
-	if err := validateCaps(buildOpts.Caps); err != nil {
-		return nil, err
-	}
-
 	luaSource, err := readLuaFile(ctx, c, options.Entrypoint)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read %s: %w", options.Entrypoint, err)
@@ -54,7 +46,7 @@ func Build(ctx context.Context, c gwclient.Client, opts ...BuildOpt) (*gwclient.
 		return nil, fmt.Errorf("no lua source code provided")
 	}
 
-	result, err := evaluateLua(luaSource, buildOpts.Opts)
+	result, err := evaluateLua(luaSource, c.BuildOpts().Opts)
 	if err != nil {
 		return nil, fmt.Errorf("failed to evaluate lua script: %w", err)
 	}
@@ -90,29 +82,15 @@ func Build(ctx context.Context, c gwclient.Client, opts ...BuildOpt) (*gwclient.
 
 func readLuaFile(ctx context.Context, c gwclient.Client, filename string) ([]byte, error) {
 	inputs, err := c.Inputs(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get inputs: %w", err)
-	}
-
-	if len(inputs) == 0 {
-		return nil, fmt.Errorf("no build context provided. Provide at least the 'context' input")
+	if err != nil || len(inputs) == 0 {
+		inputs = map[string]llb.State{
+			"context": llb.Local("context"),
+		}
 	}
 
 	stateCtx, ok := inputs["context"]
 	if !ok {
-		return nil, fmt.Errorf("required input 'context' not found. Available inputs: %v", getAvailableInputNames(inputs))
-	}
-
-	if len(inputs) > 1 {
-		var unexpectedInputs []string
-		for name := range inputs {
-			if name != "context" {
-				unexpectedInputs = append(unexpectedInputs, name)
-			}
-		}
-		if len(unexpectedInputs) > 0 {
-			return nil, fmt.Errorf("unsupported input(s) provided: %v. Currently only 'context' input is supported", unexpectedInputs)
-		}
+		stateCtx = llb.Local("context")
 	}
 
 	llbDef, err := stateCtx.Marshal(ctx)
@@ -142,18 +120,29 @@ func readLuaFile(ctx context.Context, c gwclient.Client, filename string) ([]byt
 	return data, nil
 }
 
-func getAvailableInputNames(inputs map[string]llb.State) []string {
-	names := make([]string, 0, len(inputs))
-	for name := range inputs {
-		names = append(names, name)
+func stripSyntaxDirective(source []byte) []byte {
+	lines := strings.Split(string(source), "\n")
+	for len(lines) > 0 {
+		line := strings.TrimSpace(lines[0])
+		if line == "" {
+			lines = lines[1:]
+			continue
+		}
+		if strings.HasPrefix(line, "# syntax=") || strings.HasPrefix(line, "#syntax=") {
+			lines = lines[1:]
+			continue
+		}
+		break
 	}
-	return names
+	return []byte(strings.Join(lines, "\n"))
 }
 
 func evaluateLua(source []byte, frontendOpts map[string]string) (*luavm.EvalResult, error) {
 	for k, v := range frontendOpts {
 		_ = os.Setenv(k, v)
 	}
+
+	source = stripSyntaxDirective(source)
 
 	result, err := luavm.Evaluate(strings.NewReader(string(source)), "build.lua", nil)
 	if err != nil {
@@ -165,11 +154,4 @@ func evaluateLua(source []byte, frontendOpts map[string]string) (*luavm.EvalResu
 	}
 
 	return result, nil
-}
-
-func validateCaps(caps apicaps.CapSet) error {
-	if err := caps.Supports(pb.CapFileBase); err != nil {
-		return fmt.Errorf("needs BuildKit 0.5 or later: %w", err)
-	}
-	return nil
 }

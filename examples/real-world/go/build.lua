@@ -1,3 +1,4 @@
+# syntax=ghcr.io/kasuboski/luakit:latest
 -- Go Microservice - Luakit Port
 -- Multi-stage build with optimized binary and minimal runtime
 
@@ -34,7 +35,7 @@ local with_certs = runtime:run({
     "apk", "--no-cache", "add", "ca-certificates", "tzdata"
 })
 
-local with_binary = with_certs:copy(built, "/dist/main", "/root/main")
+local with_binary = with_certs:copy(built, "/dist/main", "/root/main", { mode = "0755" })
 
 local with_tzdata = with_binary:copy(built, "/usr/local/go/lib/time/zoneinfo.zip", "/usr/local/zoneinfo.zip")
 
@@ -51,7 +52,7 @@ bk.export(with_user, {
     },
     user = "app",
     workdir = "/root",
-    expose = {"8080/tcp"},
+    expose = { "8080/tcp" },
     labels = {
         ["org.opencontainers.image.title"] = "Go Microservice",
         ["org.opencontainers.image.description"] = "Multi-stage Go microservice with optimized binary",

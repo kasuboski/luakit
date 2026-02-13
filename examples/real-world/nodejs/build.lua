@@ -1,3 +1,4 @@
+# syntax=ghcr.io/kasuboski/luakit:latest
 -- Node.js Web Application - Luakit Port
 -- Multi-stage build with production optimizations
 
