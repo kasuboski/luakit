@@ -3,8 +3,6 @@ package gateway
 import (
 	"testing"
 
-	"github.com/moby/buildkit/solver/pb"
-	"github.com/moby/buildkit/util/apicaps"
 	"github.com/stretchr/testify/require"
 )
 
@@ -65,32 +63,38 @@ bk.export(result, {
 	require.Equal(t, "/app", result.ImageConfig.Config.WorkingDir)
 }
 
-func TestValidateCaps(t *testing.T) {
+func TestStripSyntaxDirective(t *testing.T) {
 	tests := []struct {
-		name    string
-		caps    apicaps.CapSet
-		wantErr bool
+		name     string
+		source   string
+		expected string
 	}{
 		{
-			name:    "valid caps",
-			caps:    pb.Caps.CapSet(pb.Caps.All()),
-			wantErr: false,
+			name:     "strip syntax directive",
+			source:   "# syntax=ghcr.io/kasuboski/luakit:latest\nlocal base = bk.image(\"alpine:3.19\")\nbk.export(base)",
+			expected: "local base = bk.image(\"alpine:3.19\")\nbk.export(base)",
 		},
 		{
-			name:    "empty caps",
-			caps:    pb.Caps.CapSet(nil),
-			wantErr: true,
+			name:     "strip syntax directive without space",
+			source:   "#syntax=ghcr.io/kasuboski/luakit:latest\nlocal base = bk.image(\"alpine:3.19\")\nbk.export(base)",
+			expected: "local base = bk.image(\"alpine:3.19\")\nbk.export(base)",
+		},
+		{
+			name:     "strip syntax directive with leading blank line",
+			source:   "\n# syntax=ghcr.io/kasuboski/luakit:latest\nlocal base = bk.image(\"alpine:3.19\")\nbk.export(base)",
+			expected: "local base = bk.image(\"alpine:3.19\")\nbk.export(base)",
+		},
+		{
+			name:     "no syntax directive",
+			source:   "local base = bk.image(\"alpine:3.19\")\nbk.export(base)",
+			expected: "local base = bk.image(\"alpine:3.19\")\nbk.export(base)",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := validateCaps(tt.caps)
-			if tt.wantErr {
-				require.Error(t, err)
-			} else {
-				require.NoError(t, err)
-			}
+			result := stripSyntaxDirective([]byte(tt.source))
+			require.Equal(t, tt.expected, string(result))
 		})
 	}
 }

@@ -201,6 +201,10 @@ depends = ["install", "install:gateway"]
 description = "Format code"
 run = "go fmt ./..."
 
+[tasks.pre-commit]
+description = "Run pre-commit hooks"
+depends = ["fmt", "lint", "test"]
+
 [tasks.lint]
 description = "Run all linters"
 depends = ["lint:actions", "lint:go", "lint:lua", "lint:vet"]
@@ -242,7 +246,7 @@ echo "Docker image built: {{vars.binary_name}}:latest"
 description = "Build gateway Docker image (BuildKit frontend)"
 run = '''
 echo "Building gateway Docker image..."
-docker build -f Dockerfile.gateway -t {{vars.binary_name}}-gateway:latest .
+docker build -t {{vars.binary_name}}-gateway:latest .
 echo "Gateway Docker image built: {{vars.binary_name}}-gateway:latest"
 '''
 
