@@ -317,7 +317,7 @@ local result = base:run("npm install", {
 ```lua
 -- Good: Copy package.json first
 local pkg = base:copy(bk.local_("context", {
-    include_patterns = { "package*.json" }
+    include = { "package*.json" }
 }), ".", "/app")
 ```
 

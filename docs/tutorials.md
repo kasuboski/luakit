@@ -111,7 +111,7 @@ local builder = bk.image("golang:1.21-alpine")
 
 -- Copy go.mod and go.sum first (better caching)
 local go_files = bk.local_("context", {
-    include_patterns = { "go.mod", "go.sum" }
+    include = { "go.mod", "go.sum" }
 })
 local with_go_files = builder:copy(go_files, ".", "/app")
 
@@ -275,7 +275,7 @@ local base = bk.image("node:20-alpine")
 
 -- Copy package files first
 local pkg_files = bk.local_("context", {
-    include_patterns = { "package*.json" }
+    include = { "package*.json" }
 })
 local with_pkg = base:copy(pkg_files, ".", "/app")
 
@@ -408,7 +408,7 @@ local sys_installed = sys_deps:run({
 
 -- Stage 2: Python packages
 local py_files = bk.local_("context", {
-    include_patterns = { "requirements*.txt" }
+    include = { "requirements*.txt" }
 })
 local with_py = sys_installed:copy(py_files, ".", "/app")
 

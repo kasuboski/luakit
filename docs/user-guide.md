@@ -245,7 +245,7 @@ bk.export(final, {
 ```lua
 -- Stage 1: Dependencies
 local deps = bk.image("node:20")
-    :copy(bk.local_("context", { include_patterns = { "package*.json" } }), ".", "/app")
+    :copy(bk.local_("context", { include = { "package*.json" } }), ".", "/app")
     :run("npm ci", { cwd = "/app", mounts = { bk.cache("/root/.npm") } })
 
 -- Stage 2: Build
@@ -321,7 +321,7 @@ Order operations for maximum cache hits:
 -- Good: Copy package files first, install dependencies, then copy source
 local base = bk.image("node:20")
 local pkg = base:copy(bk.local_("context", {
-    include_patterns = { "package*.json" }
+    include = { "package*.json" }
 }), ".", "/app")
 local deps = pkg:run("npm ci", {
     cwd = "/app",

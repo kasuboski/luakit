@@ -154,7 +154,7 @@ COPY package*.json ./
 
 ```lua
 local pkg = bk.local_("context", {
-    include_patterns = { "package*.json" }
+    include = { "package*.json" }
 })
 local result = base:copy(pkg, ".", "/app")
 ```
@@ -396,7 +396,7 @@ ENTRYPOINT ["/server"]
 -- Builder
 local builder = bk.image("golang:1.21")
 local go_files = bk.local_("context", {
-    include_patterns = { "go.mod", "go.sum" }
+    include = { "go.mod", "go.sum" }
 })
 local with_go = builder:copy(go_files, ".", "/app")
 local deps = with_go:run("go mod download", {
@@ -458,7 +458,7 @@ ENTRYPOINT ["node", "dist/index.js"]
 -- Builder
 local builder = bk.image("node:20")
 local pkg_files = bk.local_("context", {
-    include_patterns = { "package*.json" }
+    include = { "package*.json" }
 })
 local with_pkg = builder:copy(pkg_files, ".", "/app")
 local deps = with_pkg:run("npm ci --only=production", {
@@ -514,7 +514,7 @@ ENTRYPOINT ["python", "-m", "src.main"]
 -- Builder
 local builder = bk.image("python:3.11-slim")
 local req = builder:copy(bk.local_("context", {
-    include_patterns = { "requirements.txt" }
+    include = { "requirements.txt" }
 }), ".", "/app")
 local deps = req:run("pip install --no-cache-dir -r requirements.txt", {
     cwd = "/app",
@@ -559,7 +559,7 @@ CMD ["node", "dist/index.js"]
 ```lua
 local base = bk.image("node:20-alpine")
 local pkg = base:copy(bk.local_("context", {
-    include_patterns = { "package*.json" }
+    include = { "package*.json" }
 }), ".", "/app")
 local deps = pkg:run("npm ci", {
     cwd = "/app",
@@ -607,7 +607,7 @@ CMD ["./main"]
 ```lua
 local builder = bk.image("golang:1.21")
 local go_files = bk.local_("context", {
-    include_patterns = { "go.mod", "go.sum" }
+    include = { "go.mod", "go.sum" }
 })
 local with_go = builder:copy(go_files, ".", "/src")
 local deps = with_go:run("go mod download", {
@@ -691,7 +691,7 @@ local with_sys = base:run({
 
 -- Install Python dependencies
 local req = bk.local_("context", {
-    include_patterns = { "requirements.txt" }
+    include = { "requirements.txt" }
 })
 local with_req = with_sys:copy(req, ".", "/app")
 local with_deps = with_req:run("pip install --no-cache-dir -r requirements.txt", {

@@ -66,7 +66,7 @@ For detailed information about the porting process, challenges, and best practic
 - No direct HEALTHCHECK equivalent (can be added)
 - No ARG directive for build-time arguments (can be added)
 - Multi-line shell scripts require Lua string concatenation
-- Pattern matching in COPY limited to include_patterns
+- Pattern matching in COPY limited to include
 
 ### Best Practices
 1. Use array form for commands when possible

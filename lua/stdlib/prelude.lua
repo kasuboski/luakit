@@ -30,7 +30,7 @@ function M.go_build(builder, src, opts)
 	local mod_cache = builder:run({ "go", "mod", "download" }, {
 		cwd = cwd,
 		mounts = {
-			bk.local_("context", { include_patterns = { "go.*" } }),
+			bk.local_("context", { include = { "go.*" } }),
 			bk.cache("/go/pkg/mod", { sharing = "shared", id = "gomod" }),
 		},
 	})
@@ -74,7 +74,7 @@ function M.node_build(builder, src, opts)
 	local deps = builder:run({ "sh", "-c", npm_cmd }, {
 		cwd = cwd,
 		mounts = {
-			bk.local_("context", { include_patterns = { "package*.json" } }),
+			bk.local_("context", { include = { "package*.json" } }),
 			bk.cache("/root/.npm", { sharing = "locked" }),
 		},
 	})
