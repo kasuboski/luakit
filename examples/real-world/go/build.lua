@@ -1,4 +1,4 @@
-# syntax=luakit-gateway:latest
+# syntax=ghcr.io/kasuboski/luakit:latest
 -- Go Microservice - Luakit Port
 -- Multi-stage build with optimized binary and minimal runtime
 

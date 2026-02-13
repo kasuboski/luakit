@@ -1,3 +1,4 @@
+# syntax=ghcr.io/kasuboski/luakit:latest
 -- Python Data Science Container - Luakit Port
 -- Full data science environment with ML frameworks
 

@@ -172,20 +172,26 @@ The CLI reads `build.lua` from disk and outputs the LLB Definition protobuf to s
 ### Gateway Frontend (CI/Production)
 Package luakit as a BuildKit frontend image for container-based builds. The `gateway` binary acts as a BuildKit frontend via the gRPC protocol, receiving the build context from BuildKit and returning the LLB Definition.
 
+Add a syntax directive to your `build.lua`:
+
+```lua
+# syntax=ghcr.io/kasuboski/luakit:latest
+local base = bk.image("alpine:3.19")
+-- ... rest of your build
+```
+
+Then build with docker buildx:
+
 ```bash
-# Using docker buildx
-docker buildx build \
-  --frontend gateway.v0 \
-  --opt source=docker.io/kasuboski/luakit:latest \
-  --local context=. \
-  -t myapp:latest
+docker buildx build -f build.lua -t myapp:latest .
 ```
 
 Or with buildctl directly:
+
 ```bash
 buildctl build \
   --frontend=gateway.v0 \
-  --opt source=docker.io/kasuboski/luakit:latest \
+  --opt source=ghcr.io/kasuboski/luakit:latest \
   --local context=.
 ```
 
@@ -270,27 +276,24 @@ bk.export(final, {
 
 ### Gateway Mode
 
+First, add a syntax directive to your `build.lua`:
+
+```lua
+# syntax=ghcr.io/kasuboski/luakit:latest
+-- your build definition
+```
+
+Then build with docker buildx:
+
 ```bash
-# Build with Docker using the gateway frontend
-docker buildx build \
-  --frontend gateway.v0 \
-  --opt source=docker.io/kasuboski/luakit:latest \
-  --local context=. \
-  -t myapp:latest
+# Build with Docker using the syntax directive
+docker buildx build -f build.lua -t myapp:latest .
 
 # Build with buildctl using the gateway frontend
 buildctl build \
   --frontend=gateway.v0 \
-  --opt source=docker.io/kasuboski/luakit:latest \
+  --opt source=ghcr.io/kasuboski/luakit:latest \
   --local context=.
-
-# Using a specific build.lua path in context
-docker buildx build \
-  --frontend gateway.v0 \
-  --opt source=docker.io/kasuboski/luakit:latest \
-  --opt filename=builds/production.lua \
-  --local context=. \
-  -t myapp:latest
 ```
 
 ## Comparison to Alternatives
