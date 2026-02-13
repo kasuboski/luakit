@@ -21,11 +21,11 @@ local full_context = bk.local_("context")
 
 local built = mod_cache:run({
     "sh", "-c",
-    "CGO_ENABLED=0 GOOS=linux go build -ldflags='-s -w' -a -installsuffix cgo -o main ."
+    "CGO_ENABLED=0 GOOS=linux go build -ldflags='-s -w' -a -installsuffix cgo -o /dist/main ."
 }, {
     cwd = "/app",
     mounts = {
-        bk.bind(full_context, "/app", { readonly = false }),
+        bk.bind(full_context, "/app"),
         bk.cache("/go/pkg/mod", { sharing = "shared", id = "gomod" }),
         bk.cache("/root/.cache/go-build", { sharing = "shared", id = "gobuild" }),
     },
@@ -37,7 +37,7 @@ local with_certs = runtime:run({
     "apk", "--no-cache", "add", "ca-certificates", "tzdata"
 })
 
-local with_binary = with_certs:copy(built, "/app/main", "/root/main")
+local with_binary = with_certs:copy(built, "/dist/main", "/root/main")
 
 local with_tzdata = with_binary:copy(built, "/usr/local/go/lib/time/zoneinfo.zip", "/usr/local/zoneinfo.zip")
 
