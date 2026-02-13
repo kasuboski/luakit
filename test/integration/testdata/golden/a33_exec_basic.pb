@@ -1,19 +1,19 @@
 
 0.
 ,docker-image://docker.io/library/alpine:3.19
-m
+³
 I
-Gsha256:bc08f217bb0d78e6387ff76155b3190f915a2dcb9ff101c8ddbcbe0b498f4a86 
-
+Gsha256:bc08f217bb0d78e6387ff76155b3190f915a2dcb9ff101c8ddbcbe0b498f4a86f
+_
 /bin/sh
 -c
 
-echo hello/
+echo helloAPATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin//
 K
 I
-Gsha256:e7b49ba7a9623be811edbe278bc6682878cfc386aaa1b29bce4e646dab16f39aÎ
+Gsha256:a1b796906160088132dcc8b7de42521d8c0d94aec2f5e7505708fec4b0091737Î
 W
-Gsha256:e7b49ba7a9623be811edbe278bc6682878cfc386aaa1b29bce4e646dab16f39a
+Gsha256:a1b796906160088132dcc8b7de42521d8c0d94aec2f5e7505708fec4b0091737
 
 
 
