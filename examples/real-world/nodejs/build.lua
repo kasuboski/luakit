@@ -14,7 +14,10 @@ local deps = builder:run({ "npm", "ci", "--only=production" }, {
 
 local full_context = bk.local_("context")
 
-local built = deps:run({ "npm", "run", "build" }, {
+local built = deps:run({
+    "sh", "-c",
+    "npm run build && cp -r /app/dist /dist"
+}, {
     cwd = "/app",
     mounts = {
         bk.bind(full_context, "/app"),
@@ -24,11 +27,11 @@ local built = deps:run({ "npm", "run", "build" }, {
 
 local runtime = bk.image("node:20-alpine")
 
-local runtime_deps = runtime:copy(built, "/app/node_modules", "/app/node_modules")
+local runtime_deps = runtime:copy(deps, "/app/node_modules", "/app/node_modules")
 
-local runtime_dist = runtime_deps:copy(built, "/app/dist", "/app/dist")
+local runtime_dist = runtime_deps:copy(built, "/dist", "/app/dist")
 
-local runtime_pkg = runtime_dist:copy(built, "/app/package.json", "/app/package.json")
+local runtime_pkg = runtime_dist:copy(full_context, "package.json", "/app/package.json")
 
 local with_user = runtime_pkg:run({
     "sh", "-c",
