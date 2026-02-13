@@ -19,13 +19,10 @@ local mod_cache = builder_deps:run({ "go", "mod", "download" }, {
 
 local full_context = bk.local_("context")
 
-local built = mod_cache:run({
-    "sh", "-c",
-    "CGO_ENABLED=0 GOOS=linux go build -ldflags='-s -w' -a -installsuffix cgo -o main ."
-}, {
+local built = mod_cache:run("CGO_ENABLED=0 GOOS=linux go build -ldflags='-s -w' -a -installsuffix cgo -o /dist/main .", {
     cwd = "/app",
     mounts = {
-        bk.bind(full_context, "/app", { readonly = false }),
+        bk.bind(full_context, "/app"),
         bk.cache("/go/pkg/mod", { sharing = "shared", id = "gomod" }),
         bk.cache("/root/.cache/go-build", { sharing = "shared", id = "gobuild" }),
     },
@@ -37,16 +34,15 @@ local with_certs = runtime:run({
     "apk", "--no-cache", "add", "ca-certificates", "tzdata"
 })
 
-local with_binary = with_certs:copy(built, "/app/main", "/root/main")
+local with_binary = with_certs:copy(built, "/dist/main", "/root/main")
 
 local with_tzdata = with_binary:copy(built, "/usr/local/go/lib/time/zoneinfo.zip", "/usr/local/zoneinfo.zip")
 
-local with_user = with_tzdata:run({
-    "sh", "-c",
+local with_user = with_tzdata:run(
     "addgroup -g 1000 app && " ..
     "adduser -D -u 1000 -G app app && " ..
     "chown -R app:app /root"
-})
+)
 
 bk.export(with_user, {
     env = {

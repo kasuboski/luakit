@@ -67,6 +67,12 @@ func (n *OpNode) DigestString() string {
 	return n.digest
 }
 
+func (n *OpNode) InvalidateDigest() {
+	if n != nil {
+		n.digest = ""
+	}
+}
+
 func (n *OpNode) MarshalOp() ([]byte, error) {
 	if n == nil || n.op == nil {
 		return nil, nil

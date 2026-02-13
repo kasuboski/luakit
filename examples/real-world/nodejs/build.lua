@@ -5,7 +5,7 @@ local builder = bk.image("node:20-alpine")
 
 local pkg_files = bk.local_("context", { include = { "package*.json" } })
 
-local deps = builder:run({ "npm", "ci", "--only=production" }, {
+local deps = builder:run({ "sh", "-c", "npm ci --only=production && cp -r /app/node_modules /node_modules" }, {
     cwd = "/app",
     mounts = {
         bk.bind(pkg_files, "/app"),
@@ -14,7 +14,7 @@ local deps = builder:run({ "npm", "ci", "--only=production" }, {
 
 local full_context = bk.local_("context")
 
-local built = deps:run({ "npm", "run", "build" }, {
+local built = deps:run("npm run build && cp -r /app/dist /dist", {
     cwd = "/app",
     mounts = {
         bk.bind(full_context, "/app"),
@@ -24,18 +24,17 @@ local built = deps:run({ "npm", "run", "build" }, {
 
 local runtime = bk.image("node:20-alpine")
 
-local runtime_deps = runtime:copy(built, "/app/node_modules", "/app/node_modules")
+local runtime_deps = runtime:copy(deps, "/node_modules", "/app/node_modules")
 
-local runtime_dist = runtime_deps:copy(built, "/app/dist", "/app/dist")
+local runtime_dist = runtime_deps:copy(built, "/dist", "/app/dist")
 
-local runtime_pkg = runtime_dist:copy(built, "/app/package.json", "/app/package.json")
+local runtime_pkg = runtime_dist:copy(full_context, "package.json", "/app/package.json")
 
-local with_user = runtime_pkg:run({
-    "sh", "-c",
+local with_user = runtime_pkg:run(
     "addgroup -g 1001 -S nodejs && " ..
     "adduser -S nodejs -u 1001 && " ..
     "chown -R nodejs:nodejs /app"
-})
+)
 
 bk.export(with_user, {
     env = {

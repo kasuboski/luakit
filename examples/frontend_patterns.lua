@@ -52,7 +52,6 @@ local built = workspace:run("npm run build", {
     cwd = "/app",
     mounts = {
         bk.cache("/root/.npm", { sharing = "shared" }),
-        bk.cache("/app/.next", { sharing = "locked", id = "next-cache" }),
     },
 })
 

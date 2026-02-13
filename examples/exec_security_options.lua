@@ -38,12 +38,11 @@ local as_nonroot = base:run("echo 'Running as non-root'", {
 })
 
 -- Setup builder user and app directory
-local with_builder = base:run({
-    "sh", "-c",
+local with_builder = base:run(
     "adduser -D -u 1000 builder && " ..
     "mkdir -p /app && " ..
     "chown builder:builder /app"
-})
+)
 
 -- Combine all options together
 local all_options = with_builder:run("echo 'All options combined'", {
